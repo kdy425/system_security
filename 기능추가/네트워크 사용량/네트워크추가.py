@@ -1,6 +1,7 @@
 import datetime
 import psutil
 from tabulate import tabulate
+import pandas as pd
 
 def get_processes():
     procs = []
@@ -34,7 +35,7 @@ def get_processes():
             # 열린 포트 정보를 가져옴
             open_ports = get_open_ports(pid)
             # 네트워크 사용량 정보를 가져옴
-            network_usage = get_network_usage(pid)
+            #network_usage = get_network_usage(pid)
 
         procs.append({
             'pid': pid,
@@ -47,8 +48,8 @@ def get_processes():
             'user': user,
             'network_connections': len(network_connections),
             'open_ports': ', '.join(map(str, open_ports)),
-            'network_usage_sent': get_size(network_usage['sent_bytes']),
-            'network_usage_received': get_size(network_usage['received_bytes'])
+            #'network_usage_sent': get_size(network_usage['sent_bytes']),
+            #'network_usage_received': get_size(network_usage['received_bytes'])
         })
     return procs
 
@@ -80,8 +81,13 @@ def get_open_ports(pid):    #열린포트 번호
     except Exception as e:
         print(f"Error fetching open ports: {e}")
         return []
+    
+######################################################################################################
 
-def get_network_usage(pid): #네트워크 사용량
+
+#####################################################################################################
+#오류 있음
+'''def get_network_usage(pid): #네트워크 사용량
     try:
         io = psutil.net_io_counters()
         bytes_sent, bytes_recv = io.bytes_sent, io.bytes_recv
@@ -93,15 +99,32 @@ def get_network_usage(pid): #네트워크 사용량
         }
     except Exception as e:
         print(f"Error fetching network usage: {e}")
-        return {'sent_bytes': 0, 'received_bytes': 0}
+        return {'sent_bytes': 0, 'received_bytes': 0}'''
+    
+
+
+#########################################################################################################
+
 
 #메모장에 실행 결과 저장
-output = print_processes(get_processes())
+'''output = print_processes(get_processes())
 output_file_path = "C:\\Users\\ehdbs\\OneDrive\\바탕 화면\\네트워크 대역폭 사용량.txt"
 with open(output_file_path, "w") as output_file:
     output_file.write(output)
 
-print(f"프로그램 실행 결과가 {output_file_path} 파일에 저장되었습니다.")
+print(f"프로그램 실행 결과가 {output_file_path} 파일에 저장되었습니다.")'''
+
+
+
+#엑셀로 저장 
+#세로줄 안맞음 조정 해야 함
+
+output = print_processes(get_processes())
+output_file_path = "C:\\Users\\ehdbs\\OneDrive\\바탕 화면\\통합 문서1.csv"
+with open(output_file_path, "w") as output_file:
+    output_file.write(output)
+
+
 
 
 #그냥 실행
