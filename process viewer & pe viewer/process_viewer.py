@@ -5,29 +5,29 @@ import pandas as pd
 
 
 def get_processes():
-    procs = []
-    for p in psutil.process_iter():
-        with p.oneshot():
+    procs = []  #각 프로세스의 정보를 저장 리스트
+    for p in psutil.process_iter(): #현재 실행 중인 모든 프로세스를 순회
+        with p.oneshot():   #각 프로세스에 대한 정보를 한 번에 모두 가져오는 것이 아니라 필요한 정보를 필요할 때마다 개별적으로 가져옴
             pid = p.pid
-            if pid == 0:
+            if pid == 0:    #프로세스의 PID(프로세스 식별자)
                 continue
-            name = p.name()
+            name = p.name() #프로세스 이름
             try:
-                create_time = datetime.datetime.fromtimestamp(p.create_time())
+                create_time = datetime.datetime.fromtimestamp(p.create_time())  #생성된 시간
             except OSError:
                 create_time = datetime.datetime.fromtimestamp(psutil.boot_time())
-            cpu_usage = p.cpu_percent()
+            cpu_usage = p.cpu_percent() #cpu 사용률
             try:
-                cpu_affinity = len(p.cpu_affinity())
+                cpu_affinity = len(p.cpu_affinity())    #프로세스가 사용하는 CPU 코어의 개수
             except psutil.AccessDenied:
                 cpu_affinity = 0
-            status = p.status()
+            status = p.status() #프로세스의 상태
             try:
-                memory = p.memory_full_info().uss
+                memory = p.memory_full_info().uss   #프로세스가 사용하는 메모리 양
             except psutil.AccessDenied:
                 memory = 0
             try:
-                user = p.username()
+                user = p.username() #프로세스를 실행하는 사용자
             except psutil.AccessDenied:
                 user = "N/A"
 
@@ -60,7 +60,7 @@ def get_processes():
 
 #바이트 크기를 가장 적합한 단위로 변환하여 문자열로 반환하는 함수
 def get_size(bytes):
-    for i in ['', 'K', 'M', 'G', 'T', 'P', 'E']:
+    for i in ['', 'K', 'M', 'G', 'T', 'P', 'E']: #킬로바이트, 메가바이트 ...
         if bytes < 1024:
             return f"{bytes:.2f}{i}B"
         bytes /= 1024
@@ -75,8 +75,8 @@ def print_processes(ps):
 #네트워크 연결 유무
 def get_network_connections(pid):  
     try:
-        connections = psutil.net_connections(kind='all')
-        pid_connections = [conn for conn in connections if conn.pid == pid]
+        connections = psutil.net_connections(kind='all')    #현재 시스템의 모든 네트워크 연결 정보 가져옴
+        pid_connections = [conn for conn in connections if conn.pid == pid] #pid 가 매개변수로 전달된 pid 와 일치하는 프로세스 연결 정보만을 걸래냄
         return pid_connections
     except Exception as e:
         print(f"Error fetching network connections: {e}")
@@ -86,8 +86,8 @@ def get_network_connections(pid):
 #열린포트 번호
 def get_open_ports(pid):  
     try:
-        connections = psutil.net_connections(kind='inet')
-        pid_ports = [conn.laddr.port for conn in connections if conn.pid == pid]
+        connections = psutil.net_connections(kind='inet')   # IPv4 주소 체계에 기반한 연결 정보를 검색하라는 것을 나타냄
+        pid_ports = [conn.laddr.port for conn in connections if conn.pid == pid]    #각 연결 정보에서 laddr.port는 로컬 주소의 포트 번호를 나타냄
         return pid_ports
     except Exception as e:
         print(f"Error fetching open ports: {e}")
@@ -119,6 +119,7 @@ def get_open_ports(pid):
 
 
 #메모장에 실행 결과 저장
+#개인 경로에 맞게 수정 해야함 
 '''
 output = print_processes(get_processes())
 output_file_path = "C:\\Users\\ehdbs\\OneDrive\\바탕 화면\\네트워크 대역폭 사용량.txt"
@@ -141,6 +142,7 @@ with open(output_file_path, "w") as output_file:
 
 
 #그냥 실행
+#버그 있음 수정 예정
 
 procs = get_processes()
 print_processes(procs)
