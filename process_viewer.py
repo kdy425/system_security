@@ -109,7 +109,7 @@ def get_open_ports(pid):    #열린포트 번호
 
 #메모장에 실행 결과 저장
 output = print_processes(get_processes())
-output_file_path = "C:\\Users\\ehdbs\\OneDrive\\바탕 화면\\네트워크 대역폭 사용량.txt"
+output_file_path = "C:\\Users\\kme27\\OneDrive - 고려대학교\\바탕 화면\\시스템_보안_팀플\\시스템보안팀플 결과 저장.txt"
 with open(output_file_path, "w") as output_file:
     output_file.write(output)
 
