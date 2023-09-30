@@ -1,0 +1,18 @@
+import psutil
+
+# 모든 프로세스 목록 가져오기
+all_processes = list(psutil.process_iter(attrs=['pid', 'ppid']))
+
+# 부모 프로세스를 저장할 딕셔너리 생성
+parent_processes = {}
+
+# 모든 프로세스의 PID와 부모 프로세스의 PID를 확인하고 저장
+for process in all_processes:
+    pid = process.info['pid']
+    ppid = process.info['ppid']
+    
+    parent_processes[pid] = ppid
+
+# 결과 출력
+for pid, ppid in parent_processes.items():
+    print(f"프로세스 PID: {pid}, 부모 프로세스 PID: {ppid}")
