@@ -1,0 +1,10 @@
+import psutil
+
+# 현재 프로세스의 PID
+current_pid = psutil.Process().pid
+
+# 현재 프로세스의 부모 프로세스의 PID
+parent_pid = psutil.Process(current_pid).ppid()
+
+print(f"현재 프로세스의 PID: {current_pid}")
+print(f"부모 프로세스의 PID: {parent_pid}")
