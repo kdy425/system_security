@@ -47,7 +47,7 @@ def get_processes():
             'status': status,
             'memory': get_size(memory),
             'user': user,
-            'network_usage': "Yes" if network_connections else "No",  # 네트워크 사용 여부 추가
+            'network_connection': "Yes" if network_connections else "No",  # 네트워크 사용 여부 추가
             'open_ports': ', '.join(map(str, open_ports))  # 열린 포트 정보를 문자열로 출력
         })
     return procs
