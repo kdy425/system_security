@@ -1,0 +1,34 @@
+# 부모 프로세스 정보 가져오기
+def get_parent_process(pid):
+    try:
+        parent_pid = parent_processes.get(pid, None)
+        if parent_pid is not None:
+            parent_process = psutil.Process(parent_pid)
+            return {
+                'parent_pid': parent_pid,
+                'parent_name': parent_process.name(),
+                'parent_status': parent_process.status()
+            }
+        else:
+            return {
+                'parent_pid': None,
+                'parent_name': None,
+                'parent_status': None
+            }
+    except Exception as e:
+        print(f"Error fetching parent process information: {e}")
+        return {
+            'parent_pid': None,
+            'parent_name': None,
+            'parent_status': None
+        }
+
+
+# print 함수
+def print_processes(ps):
+    for p in ps:
+        parent_info = get_parent_process(p['pid'])
+        p.update(parent_info)
+    
+    headers = "keys" + ["parent_pid", "parent_name", "parent_status"]
+    print(tabulate(ps, headers=headers, tablefmt='simple'))
