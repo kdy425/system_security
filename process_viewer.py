@@ -2,7 +2,6 @@ import datetime
 import psutil
 from tabulate import tabulate
 import pandas as pd
-from location import get_process_location
 
 def get_processes():
     procs = []
