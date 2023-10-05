@@ -35,6 +35,8 @@ def get_processes():
             network_connections = get_network_connections(pid)
             # 열린 포트 정보를 가져옴
             open_ports = get_open_ports(pid)
+            # ME_10.05_프로세스 실행 파일 경로를 가져옴
+            location = get_process_location(pid)
             # 네트워크 사용량 정보를 가져옴
             #network_usage = get_network_usage(pid)
 
@@ -49,6 +51,7 @@ def get_processes():
             'user': user,
             'network_connections': len(network_connections),
             'open_ports': ', '.join(map(str, open_ports)),
+            'location': location, # ME_10.05_프로세스 실행 파일 경로 출력
             #'network_usage_sent': get_size(network_usage['sent_bytes']),
             #'network_usage_received': get_size(network_usage['received_bytes'])
         })
@@ -82,6 +85,18 @@ def get_open_ports(pid):    #열린포트 번호
     except Exception as e:
         print(f"Error fetching open ports: {e}")
         return []
+    
+def get_process_location(pid): #ME_10.05_프로세스의 실행 파일 경로
+    try:
+        process = psutil.Process(pid)
+        exe = process.exe()
+        return exe
+    except psutil.NoSuchProcess:
+        return f"Process with PID {pid} not found."
+    except psutil.AccessDenied:
+        return f"Access denied to process with PID {pid}."
+    except Exception as e:
+        return str(e)
     
 ######################################################################################################
 
