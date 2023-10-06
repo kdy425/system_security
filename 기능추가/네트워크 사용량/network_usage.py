@@ -1,3 +1,5 @@
+#실시간 네트워크 사용량
+
 import psutil
 import time
 
