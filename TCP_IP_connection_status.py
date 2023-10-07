@@ -1,6 +1,6 @@
 import psutil
 
-def get_network_connection():
+def get_TCP_IP_connection():
 
     #현재의 tcp, ip 연결 정보를 가져오기
     connection = psutil.net_connections(kind='inet')
@@ -13,4 +13,4 @@ def get_network_connection():
         print(f"Status : {conn.status}\n")
 
 if __name__ == "__main__":
-    get_network_connection()
+    get_TCP_IP_connection()
