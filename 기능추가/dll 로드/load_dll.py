@@ -1,25 +1,20 @@
-#프로세스가 로딩 하고 있는 dll 목록 출력(pid 따로 입력)
-
+#process 가 load 하는 dll 정보 가져오기
 import psutil
 
 def load_dll(pid):
     try:
         process = psutil.Process(pid)
-
-        # 프로세스가 로딩하고 있는 DLL 목록
         dll_list = process.memory_maps(grouped=False)  # grouped=False로 설정하여 리스트로 가져옴
 
-        # DLL 목록을 출력
+        # DLL 목록을 텍스트로 출력
+        dll_text = ""
         for dll in dll_list:
-            print(f' - {dll.path}')
+            dll_text += f' - {dll.path}\n'
+
+        return dll_text
 
     except psutil.NoSuchProcess as e:
-        print(f"PID {pid}에 해당하는 프로세스를 찾을 수 없습니다.")
+        return f"PID {pid}에 해당하는 프로세스를 찾을 수 없습니다."
 
     except Exception as e:
-        print(f"오류 발생: {str(e)}")
-
-
-pid = 48540  # 원하는 PID
-load_dll(pid)
-
+        return f"오류 발생: {str(e)}"
