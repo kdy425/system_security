@@ -2,6 +2,12 @@ import datetime
 import psutil
 from tabulate import tabulate
 import pandas as pd
+#ME_10.12_linux, macos에서 디지털 서명 정보를 확인하기 위해 필요
+import os
+import subprocess
+from cryptography.x509 import load_pem_x509_certificate
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
 
 def get_processes():
     procs = []
@@ -36,6 +42,8 @@ def get_processes():
             open_ports = get_open_ports(pid)
             # ME_10.05_프로세스 실행 파일 경로를 가져옴
             location = get_process_location(pid)
+             # ME_10.12_디지털 서명 정보를 확인
+            signature_info = get_process_signature_info(location)
             # 네트워크 사용량 정보를 가져옴
             #network_usage = get_network_usage(pid)
 
@@ -51,6 +59,7 @@ def get_processes():
             'network_connections': len(network_connections),
             'open_ports': ', '.join(map(str, open_ports)),
             'location': location, # ME_10.05_프로세스 실행 파일 경로 출력
+            'signature_info': signature_info, # ME_10.12_디지털 서명 정보
             #'network_usage_sent': get_size(network_usage['sent_bytes']),
             #'network_usage_received': get_size(network_usage['received_bytes'])
         })
@@ -97,6 +106,27 @@ def get_process_location(pid): #ME_10.05_프로세스의 실행 파일 경로
     except Exception as e:
         return str(e)
     
+def get_process_signature_info(exe_path):  # ME_10.12_디지털 서명 정보를 확인
+    try:
+        if os.name == 'nt':  # Windows
+            # signtool 명령어 사용
+            command = f'signtool verify /pa "{exe_path}"'
+            result = subprocess.run(command, shell=True, capture_output=True, text=True)
+
+            if "Successfully verified" in result.stdout:
+                return "Signed"
+            else:
+                return "Not signed"
+
+        elif os.name == 'posix':  # Linux, macOS
+            # Linux, macOS에서의 디지털 서명 정보 확인 코드
+            command = f"codesign --display --verbose=4 {exe_path}"
+            result = subprocess.run(command, shell=True, capture_output=True, text=True)
+            return result.stdout
+
+    except Exception as e:
+        print(f"Error fetching signature info: {e}")
+        return "Signature information not available"
 ######################################################################################################
 
 
