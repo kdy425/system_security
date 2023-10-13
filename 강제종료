@@ -1,0 +1,23 @@
+def kill_process(pid):
+    try:
+        process = psutil.Process(pid)
+        process.kill()
+        print(f"PID {pid} 프로세스를 강제 종료했습니다.")
+    except psutil.NoSuchProcess:
+        print(f"PID {pid} 프로세스를 찾을 수 없습니다.")
+    except psutil.AccessDenied:
+        print(f"PID {pid} 프로세스를 종료할 권한이 없습니다.")
+    except Exception as e:
+        print(f"PID {pid} 프로세스 강제 종료 중 오류 발생: {e}")
+
+if __name__ == "__main__":
+    procs = get_processes()
+    print_processes(procs)
+    
+    # 사용자에게 종료할 프로세스의 PID를 입력받음
+    pid_to_kill = input("강제 종료하고 싶은 프로세스의 PID를 입력하세요: ")
+    try:
+        pid_to_kill = int(pid_to_kill)
+        kill_process(pid_to_kill)
+    except ValueError:
+        print("잘못된 PID입니다. 유효한 PID를 입력하세요.")
