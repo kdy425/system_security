@@ -5,6 +5,7 @@ import os
 import time
 import ctypes
 
+
 def get_processes():
     procs = []  #각 프로세스의 정보를 저장 리스트
     for p in psutil.process_iter(): #현재 실행 중인 모든 프로세스를 순회
@@ -97,15 +98,45 @@ def get_parent_processes():
             pass
     return parent_processes
 
-# print 함수
+# 파일의 해시값을 계산하는 함수
+def calculate_file_hash(file_path):
+    hash_object = hashlib.sha256()  # 필요에 따라 다른 해시 알고리즘을 선택
+    with open(file_path, 'rb') as file:
+        while True:
+            data = file.read(65536)  # 파일을 64KB 덩어리로 읽기
+            if not data:
+                break
+            hash_object.update(data)
+    return hash_object.hexdigest()
+
+# 프로세스의 파일 해시값 계산
+def calculate_process_file_hashes(pid):
+    file_hashes = {}
+    try:
+        process = psutil.Process(pid)
+        for file_obj in process.open_files():
+            file_path = file_obj.path
+            file_hash = calculate_file_hash(file_path)
+            file_hashes[file_path] = file_hash
+    except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+        pass
+    return file_hashes
+
+# 프로세스 정보 출력 함수
 def print_processes(ps):
     for p in ps:
-        parent_info = get_parent_processes().get(p['pid'], {})  # get_parent_processes 함수 사용
+        parent_info = get_parent_processes().get(p['pid'], {})
         p.update(parent_info)
-    
-    headers = ["pid", "name", "create_time", "cpu_usage", "cpu_affinity", "status", "user", "network_connection", "open_ports", "parent_pid", "parent_name", "parent_status"]  # 모든 필드 포함, 'memory' 필드 제거
-    headers_str = headers  # 헤더를 문자열로 변환
+
+        # 프로세스 파일에 대한 해시 계산 및 열 추가
+        file_hashes = calculate_process_file_hashes(p['pid'])
+        p['file_hashes'] = ', '.join(f"{file}: {hash}" for file, hash in file_hashes.items())
+
+    headers = ["pid", "name", "create_time", "cpu_usage", "cpu_affinity", "status", "user", "network_connection", "open_ports", "parent_pid", "parent_name", "parent_status", "file_hashes"]
+    headers_str = headers
     print(tabulate([list(p.values()) for p in ps], headers=headers_str, tablefmt='simple'))
+
+
 
 # 실행
 if __name__ == "__main__":
