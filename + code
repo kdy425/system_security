@@ -4,7 +4,7 @@ from tabulate import tabulate
 import os
 import time
 import ctypes
-
+import hashlib
 
 def get_processes():
     procs = []  #각 프로세스의 정보를 저장 리스트
