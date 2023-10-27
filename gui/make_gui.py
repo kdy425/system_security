@@ -71,6 +71,9 @@ def get_size(bytes):
             return f"{bytes:.2f}{i}B"
         bytes /= 1024
 
+
+
+
 #print 함수   
 def print_processes(ps):
     print(tabulate(ps, headers="keys", tablefmt='simple'))
@@ -97,8 +100,9 @@ def get_open_ports(pid):
 
 
 #실행
+
 procs = get_processes()
-print_processes(procs)
+#print_processes(procs)
 
 
 #########################################################################################################################################
@@ -137,11 +141,17 @@ class ProcessViewerApp:
     def __init__(self, root):
         self.root = root
         self.root.title("프로세스 뷰어")
+         # 열 별로 정렬 방향을 저장할 변수
+        self.sort_direction = {}
         
         # 프로세스 정보를 저장할 표(Table) 생성
         self.tree = ttk.Treeview(root, columns=list(procs[0].keys()), show="headings")
         for key in procs[0].keys():
-            self.tree.heading(key, text=key)
+            # 정렬 방향 변수 초기화
+            self.sort_direction[key] = True
+            
+            # 열 제목을 클릭할 때 정렬 함수 호출
+            self.tree.heading(key, text=key, command=lambda col=key: self.sort_table(col))
             self.tree.column(key, width=100)
         
         # 표에 프로세스 정보 삽입
@@ -167,6 +177,7 @@ class ProcessViewerApp:
         self.run_peviewer_button = ttk.Button(root, text="location", command=self.run_get_process_location_and_display_result)
         self.run_peviewer_button.pack(pady=10)
 
+
         # "Refresh" 버튼 생성
         self.refresh_button = ttk.Button(root, text="Refresh", command=self.update_process_list)
         self.refresh_button.pack(pady=10)
@@ -175,6 +186,42 @@ class ProcessViewerApp:
         self.tree.bind("<ButtonRelease-1>", self.on_item_click)
         self.tree.bind("<Button-3>", self.show_context_menu)  # 우클릭 이벤트 리스너 등록
 
+####################################################################################################################################################
+    # 메모리 크기를 숫자 값으로 변환하기 위한 함수
+    def convert_memory(self, memory_str):
+        try:
+            size = float(memory_str[:-2])
+            unit = memory_str[-2:].upper()
+            units = {'KB': 1024, 'MB': 1024**2, 'GB': 1024**3, 'TB': 1024**4, 'PB': 1024**5, 'EB': 1024**6}
+            return size * units.get(unit, 1)  # 기본값 1로 설정
+        except ValueError:
+            return 0  # 오류 발생 시 0으로 처리
+
+
+
+     # 정렬 함수
+    def sort_table(self, column):
+        # 현재 정렬 방향 확인
+        direction = self.sort_direction[column]
+
+        # 정렬 방향에 따라 정렬 수행
+        if column == 'memory':
+            # 메모리 크기를 정렬하기 위한 수치 값으로 변환
+            procs.sort(key=lambda x: self.convert_memory(x[column]), reverse=not direction)
+        else:
+            procs.sort(key=lambda x: x[column], reverse=not direction)
+
+        # 정렬 방향 변경
+        self.sort_direction[column] = not direction
+
+        # 기존 표 내용을 삭제
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+
+        # 정렬된 데이터로 표 채우기
+        for i, proc in enumerate(procs):
+            self.tree.insert("", "end", values=list(proc.values()))
+##################################################################################################################################################
 
 
     # 프로세스 목록을 업데이트하는 함수
