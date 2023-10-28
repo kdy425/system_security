@@ -45,7 +45,7 @@ def update_memory_graph(pid):
     return inner_update
 
 # 프로세스의 PID
-pid = 7044
+pid = 3248
 
 update_func = update_memory_graph(pid)
 
