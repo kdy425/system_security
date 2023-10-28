@@ -1,38 +1,40 @@
 import psutil
 import matplotlib.pyplot as plt
 from collections import deque
-import time
 
 max_data_points = 50
-memory_usage_data = deque(maxlen=max_data_points)
+cpu_usage_data = deque(maxlen=max_data_points)
 
 plt.ion()
 fig, ax1 = plt.subplots()
 ax1.set_xlabel('시간')
-ax1.set_ylabel('전체 메모리 사용률 (%)', color='tab:blue')
+ax1.set_ylabel('전체 CPU 사용률 (%)', color='tab:blue')
 
 
-def update_total_memory_graph():
-    memory_percent = psutil.virtual_memory().percent  # 전체 메모리 사용률
-    memory_usage_data.append(memory_percent)
+def update_total_cpu_graph():
+    cpu_percent = psutil.cpu_percent(interval=1)
+    cpu_usage_data.append(cpu_percent)
     ax1.clear()
     ax1.set_xlabel('시간')
-    ax1.set_ylabel('전체 메모리 사용률 (%)', color='tab:blue')
-    ax1.plot(memory_usage_data, color='tab:blue', label='전체 메모리 사용률')
-    max_value = max(memory_usage_data) * 1.2
-    ax1.set_ylim(0, max_value)
-    ax1.set_yticks(range(0, int(max_value) + 1, 10))
+    ax1.set_ylabel('전체 CPU 사용률 (%)', color='tab:blue')
+    ax1.plot(cpu_usage_data, color='tab:blue', label='전체 CPU 사용률')
+
+    ax1.set_ylim(0, 1.0)
+    ax1.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
     fig.tight_layout()
 
-def update_memory_graph():
+
+def display_cpu_usage_graph():
     try:
         while True:
-            update_total_memory_graph()
+            update_total_cpu_graph()
             plt.draw()
             plt.pause(1)
     except KeyboardInterrupt:
         pass
 
-plt.ioff()
-plt.show()
-update_memory_graph()
+    plt.ioff()
+    plt.show()
+
+
+display_cpu_usage_graph()
