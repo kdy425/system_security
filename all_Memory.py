@@ -20,12 +20,11 @@ def update_total_memory_graph():
     ax1.set_xlabel('시간')
     ax1.set_ylabel('전체 메모리 사용률 (%)', color='tab:blue')
     ax1.plot(memory_usage_data, color='tab:blue', label='전체 메모리 사용률')
-    max_value = max(memory_usage_data) * 1.2
+    max_value = 100
     ax1.set_ylim(0, max_value)
     ax1.set_yticks(range(0, int(max_value) + 1, 10))  # Y 축
+
     fig.tight_layout()
-
-
 def display_memory_usage_graph():
     try:
         while True:
@@ -42,5 +41,4 @@ def display_memory_usage_graph():
 
 display_memory_usage_graph()
 
-plt.ioff()
-plt.show()
+
