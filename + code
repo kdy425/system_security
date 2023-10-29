@@ -85,6 +85,7 @@ def get_open_ports(pid):
         print(f"Error fetching open ports: {e}")
         return []
 
+#부모 프로세스 아이디
 def get_parent_processes():
     parent_processes = {}
     for process in psutil.process_iter(attrs=['pid', 'name', 'status', 'ppid']):  # 'ppid' 필드 추가
