@@ -1,0 +1,65 @@
+import hashlib
+import psutil
+import time
+
+# 이전에 저장한 프로세스 파일 해시를 저장하는 딕셔너리
+previous_process_file_hashes = {}
+
+def calculate_file_hash(file_path, hash_algorithm='sha256'):
+    try:
+        hasher = hashlib.new(hash_algorithm)
+        with open(file_path, 'rb') as file:
+            while True:
+                data = file.read(65536)
+                if not data:
+                    break
+                hasher.update(data)
+        return hasher.hexdigest()
+    except Exception as e:
+        return str(e)
+
+def get_process_file_hashes():
+    process_file_hashes = {}
+    for process in psutil.process_iter(attrs=['pid', 'name']):
+        try:
+            process_info = process.info
+            pid = process_info['pid']
+            process_name = process_info['name']
+            process_exe = process.as_dict(attrs=['exe'])['exe']
+            process_hash = calculate_file_hash(process_exe)
+            process_file_hashes[pid] = {'name': process_name, 'hash': process_hash}
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+    return process_file_hashes
+
+def verify_integrity():
+    global previous_process_file_hashes
+    current_process_file_hashes = get_process_file_hashes()
+    
+    integrity_violated = False
+    
+    for pid, current_info in current_process_file_hashes.items():
+        if pid in previous_process_file_hashes:
+            previous_info = previous_process_file_hashes[pid]
+            if current_info['hash'] != previous_info['hash']:
+                print(f'File integrity violation detected: PID {pid}, Name: {current_info["name"]}')
+                integrity_violated = True
+    
+    if not integrity_violated:
+        print('No file integrity violations detected.')
+
+    # 이번 루프의 결과를 저장
+    previous_process_file_hashes = current_process_file_hashes
+
+if __name__ == '__main__':
+    # 주기적으로 실행하여 프로세스 파일 무결성을 검사
+    process_file_hashes = get_process_file_hashes()
+    for pid, info in process_file_hashes.items():
+        print(f'PID: {pid}, Name: {info["name"]}, Hash: {info["hash"]}')
+    
+    while True:
+        verify_integrity()
+        # 원하는 주기로 무결성 검사를 반복 (현재 주기: 10초)
+        time.sleep(10) 
+
+#코드에서 변경이 감지되었을 때, "File integrity violation detected" 메시지 표시, 변경이 감지되지 않으면 "No file integrity violations detected" 메시지 표시
