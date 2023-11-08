@@ -48,7 +48,7 @@ def verify_integrity():
     if not integrity_violated:
         print('No file integrity violations detected.')
 
-    # 이번 루프의 결과를 저장합니다.
+    # 이번 루프의 결과를 저장
     previous_process_file_hashes = current_process_file_hashes
 
 if __name__ == '__main__':
@@ -59,6 +59,6 @@ if __name__ == '__main__':
     
     while True:
         verify_integrity()
-        # 원하는 주기로 무결성 검사를 반복
+        # 원하는 주기로 무결성 검사를 반복 (현재 주기: 10초)
         time.sleep(10)
 
