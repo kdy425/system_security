@@ -172,6 +172,22 @@ class ProcessViewerApp:
         self.update_process_list()
 
 
+        #버튼 프레임 생성
+        button_frame = ttk.Frame(root)
+        button_frame.pack(side="top", fill="x")
+
+        # "Refresh" button
+        self.refresh_button = ttk.Button(button_frame, text="refresh", command=self.update_process_list)
+        self.refresh_button.pack(side="left", padx=0)
+
+        # "end process" button
+        self.run_peviewer_button = ttk.Button(button_frame, text="end process", command=self.run_end_process)
+        self.run_peviewer_button.pack(side="left", padx=0)
+
+        # "Packet Capture" button
+        self.packet_button = ttk.Button(button_frame, text="packet capture", command=self.run_packet_capture)
+        self.packet_button.pack(side="left", padx=0)
+
         # 표 스크롤바 추가
         self.scrollbar = ttk.Scrollbar(root, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=self.scrollbar.set)
@@ -179,19 +195,6 @@ class ProcessViewerApp:
         # 표와 스크롤바 배치
         self.tree.pack(side="left", fill="both", expand=True)
         self.scrollbar.pack(side="right", fill="y")
-
-
-        # "end process" 버튼 생성
-        self.run_peviewer_button = ttk.Button(root, text="end process", command=self.run_end_process)
-        self.run_peviewer_button.pack(pady=10)
-
-        # "Refresh" 버튼 생성
-        self.refresh_button = ttk.Button(root, text="refresh", command=self.update_process_list)
-        self.refresh_button.pack(pady=10)
-
-        # "Refresh" 버튼 생성
-        self.packet_button = ttk.Button(root, text="packet capture", command=self.run_packet_capture)
-        self.packet_button.pack(pady=10)
 
 
         # 표의 이벤트 리스너 등록
