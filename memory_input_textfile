@@ -1,0 +1,70 @@
+import subprocess
+import psutil
+import time
+
+def get_pid_info():
+    try:
+        pid_info = subprocess.check_output('netstat -ano -p TCP', shell=True, text=True)
+        return pid_info
+    except Exception as e:
+        return str(e)
+
+def get_process_info(pid):
+    try:
+        process_info = subprocess.check_output('tasklist /v /fi "PID eq "' + pid, shell=True, text=True)
+        return process_info.split('\n')[3]
+    except Exception as e:
+        return str(e)
+
+def get_processes_outside_memory_range(lower_limit_mb, upper_limit_mb):
+    processes_outside_memory_range = []
+    for proc in psutil.process_iter(['pid', 'name', 'memory_info']):
+        try:
+            memory_usage_mb = proc.info['memory_info'].rss / (1024 * 1024)
+            if memory_usage_mb < lower_limit_mb or memory_usage_mb >= upper_limit_mb:
+                processes_outside_memory_range.append((proc.info['pid'], proc.info['name'], memory_usage_mb))
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+    return processes_outside_memory_range
+
+if __name__ == "__main__":
+    try:
+        memory_limit_lower_mb = float(input("메모리 제한 구간(최소, MB): "))
+        memory_limit_upper_mb = float(input("메모리 제한 구간(최대, MB): "))
+    except ValueError:
+        print("올바른 숫자를 입력하세요.")
+        exit()
+
+    repeat_interval_seconds = 5
+
+    # 결과를 기록할 파일 열기 (기존 파일 내용을 덮어쓰지 않고 이어쓰기 모드인 'a' 사용)
+    with open("output_2.txt", "a") as file:
+        file.write(f"초기 메모리 제한 구간: {memory_limit_lower_mb}MB ~ {memory_limit_upper_mb}MB\n")
+
+    while True:
+        result = get_pid_info()
+        # 결과를 파일에 추가
+        with open("output_2.txt", "a") as file:
+            file.write("\nPID 정보:\n")
+            file.write(result + "\n")
+
+        result = result.split('\n')
+        result = result[3:-1]
+        pid_list = []
+        for item in result:
+            item = item.split()
+            pid_list.append(item[-1])
+
+        with open("output_2.txt", "a") as file:
+            file.write("PID 정보 출력 중:\n")
+            for pid in pid_list:
+                file.write(get_process_info(pid) + "\n")
+
+        processes_outside_memory_range = get_processes_outside_memory_range(memory_limit_lower_mb, memory_limit_upper_mb)
+
+        with open("output_2.txt", "a") as file:
+            file.write(f"\n메모리 사용량이 {memory_limit_lower_mb} 미만이거나 {memory_limit_upper_mb} 이상인 프로세스:\n")
+            for pid, name, memory_usage in processes_outside_memory_range:
+                file.write(f"PID: {pid}, 이름: {name}, 메모리 사용량: {memory_usage:.2f}MB\n")
+
+        time.sleep(repeat_interval_seconds)
