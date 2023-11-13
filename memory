@@ -1,0 +1,69 @@
+import subprocess
+import psutil
+import time
+
+def get_pid_info():
+    try:
+        # 프로세스 정보 가져오기
+        pid_info = subprocess.check_output('netstat -ano -p TCP', shell=True, text=True)
+        return pid_info
+    except Exception as e:
+        return str(e)
+
+def get_process_info(pid):
+    try:
+        # 프로세스 정보 가져오기 
+        process_info = subprocess.check_output('tasklist /v /fi "PID eq "' + pid, shell=True, text=True)
+        return process_info.split('\n')[3]
+    except Exception as e:
+        return str(e)
+
+def get_processes_outside_memory_range(lower_limit_mb, upper_limit_mb):
+    processes_outside_memory_range = []
+    for proc in psutil.process_iter(['pid', 'name', 'memory_info']):
+        try:
+            # 메모리 사용량 계산 (메가바이트로 변환)
+            memory_usage_mb = proc.info['memory_info'].rss / (1024 * 1024)
+            
+            # 50 미만이거나 150 이상인 값을 리스트에 추가
+            if memory_usage_mb < lower_limit_mb or memory_usage_mb >= upper_limit_mb:
+                processes_outside_memory_range.append((proc.info['pid'], proc.info['name'], memory_usage_mb))
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+    return processes_outside_memory_range
+
+if __name__ == "__main__":
+    # 반복 주기 설정 (초 단위, 예: 5초마다 실행)
+    repeat_interval_seconds = 5
+
+    while True:
+        # 네트워크 및 프로세스 정보 가져오기
+        result = get_pid_info()
+        print("PID 정보:")
+        print(result)
+
+        print("PID 정보 분석 중.")
+        result = result.split('\n')
+        result = result[3:-1]
+        pid_list = []
+        for item in result:
+            item = item.split()
+            pid_list.append(item[-1])
+
+        print("PID 정보 출력 중.")
+        for pid in pid_list:
+            print(get_process_info(pid))
+
+        # 메모리 제한 구간을 메가바이트로 정의 (예: 50MB에서 150MB)
+        memory_limit_lower_mb = 50
+        memory_limit_upper_mb = 150
+
+        # 메모리 제한 구간을 벗어나는 프로세스 가져오기
+        processes_outside_memory_range = get_processes_outside_memory_range(memory_limit_lower_mb, memory_limit_upper_mb)
+
+        print("\n메모리 사용량이 50 미만이거나 150 이상인 프로세스:")
+        for pid, name, memory_usage in processes_outside_memory_range:
+            print(f"PID: {pid}, 이름: {name}, 메모리 사용량: {memory_usage:.2f}MB")
+
+        # 일정 시간 동안 대기
+        time.sleep(repeat_interval_seconds)
