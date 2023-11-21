@@ -227,6 +227,22 @@ class ProcessViewerApp:
         self.context_menu.add_command(label="network info", command=self.run_get_process_network_info_result)
         self.context_menu.add_command(label="process info", command=self.run_get_process_info_result)
 
+        self.context_menu.add_command(label="Copy", command=self.copy_selected_row)
+        
+        ## 표의 이벤트 리스너 등록
+        self.tree.bind("<ButtonRelease-1>", self.on_item_click)  # 좌클릭 이벤트(release)
+        self.tree.bind("<Button-3>", self.show_context_menu)  # 우클릭 이벤트 리스너 등록
+        
+         ## "Copy" 메뉴 항목에 대한 동작
+    def copy_selected_row(self):
+        item = self.tree.selection()[0]  # 선택한 행의 ID 가져오기
+        values = self.tree.item(item, "values")  # 선택한 행의 값(프로세스 정보) 가져오기
+        selected_row_text = "\t".join(map(str, values))
+        self.root.clipboard_clear()
+        self.root.clipboard_append(selected_row_text)
+        self.root.update()
+
+
     def run_packet_capture(self):
     # 패킷 캡처 함수
         def packet_capture(interface):
