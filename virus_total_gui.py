@@ -93,8 +93,8 @@ class get_VT_result:
                     if key in ['AhnLab-V3', 'ALYac', 'ViRobot']:
                         result += '\n%-20s : %s' % (key, scan[key]['result'])
 
-                result += "\n+++++++++++++++++++++++++++클리어+++++++++++++++++++++++++++"
-
+                result += "\n++++++++++++++++" + str(md5) + " 검사 완료 +++++++++++++++++"
+                
                 # GUI 업데이트
                 self.result_text.insert(tk.END, result)
                 self.result_text.update()
