@@ -21,6 +21,7 @@ from location import get_process_location
 from terminate import terminate_process
 from network_info import get_network_info
 from process_info import get_process_info
+
 ####################################################################################
 def get_processes():
     procs = []  #각 프로세스의 정보를 저장 리스트
@@ -226,12 +227,7 @@ class ProcessViewerApp:
         self.context_menu.add_command(label="location", command=self.run_get_process_location_and_display_result)
         self.context_menu.add_command(label="network info", command=self.run_get_process_network_info_result)
         self.context_menu.add_command(label="process info", command=self.run_get_process_info_result)
-
         self.context_menu.add_command(label="Copy", command=self.copy_selected_row)
-        
-        ## 표의 이벤트 리스너 등록
-        self.tree.bind("<ButtonRelease-1>", self.on_item_click)  # 좌클릭 이벤트(release)
-        self.tree.bind("<Button-3>", self.show_context_menu)  # 우클릭 이벤트 리스너 등록
         
          ## "Copy" 메뉴 항목에 대한 동작
     def copy_selected_row(self):
