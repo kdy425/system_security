@@ -1,40 +1,72 @@
 import psutil
 import pefile
+import struct
+import os
 
 def get_pe_info(pid):
+    result = ""  # Initialize an empty string to store the result
     try:
-        # PID를 사용하여 프로세스 정보 가져오기
+        # Get process information
         process = psutil.Process(pid)
+        process_exe = process.exe()
 
-        # 프로세스의 실행 파일 경로 가져오기
-        exe_path = process.exe()
+        # Open the process memory
+        with open(process_exe, 'rb') as file:
+            # Read DOS header
+            dos_header = file.read(64)
+            e_lfanew_offset = struct.unpack('H', dos_header[60:62])[0]
 
-        # PE 파일 열기
-        pe = pefile.PE(exe_path)
+            # Seek to PE header
+            file.seek(e_lfanew_offset)
+            pe_signature = file.read(4)
 
-        # PE 정보를 문자열로 저장
-        pe_info_str = f"PE Information for PID {pid}:\n"
-        pe_info_str += "DOS Header:\n"
-        pe_info_str += f"e_magic: 0x{pe.DOS_HEADER.e_magic:X}\n"
-        pe_info_str += f"e_lfanew: 0x{pe.DOS_HEADER.e_lfanew:X}\n"
+            # Check PE signature
+            if pe_signature != b'PE\x00\x00':
+                raise ValueError("Not a valid PE file")
 
-        pe_info_str += "PE Signature: 0x{:X}\n".format(pe.NT_HEADERS.Signature)
+            # Read COFF header
+            coff_header = file.read(24)
+            machine_type = struct.unpack('H', coff_header[0:2])[0]
+            characteristics = struct.unpack('H', coff_header[18:20])[0]
 
-        pe_info_str += "File Header:\n"
-        pe_info_str += f"Machine: 0x{pe.FILE_HEADER.Machine:X}\n"
-        pe_info_str += f"Number of Sections: {pe.FILE_HEADER.NumberOfSections}\n"
-        pe_info_str += f"Time Date Stamp: 0x{pe.FILE_HEADER.TimeDateStamp:X}\n"
-        pe_info_str += f"Characteristics: 0x{pe.FILE_HEADER.Characteristics:X}\n"
+            # Read optional header
+            optional_header_size = struct.unpack('H', file.read(2))[0]
+            file.seek(2, os.SEEK_CUR)  # Skip Magic field
+            major_linker_version, minor_linker_version = struct.unpack('BB', file.read(2))
+            size_of_code, size_of_initialized_data, size_of_uninitialized_data = struct.unpack('LLL', file.read(12))
+            address_of_entry_point, base_of_code, base_of_data = struct.unpack('LLL', file.read(12))
 
-        pe_info_str += "Optional Header:\n"
-        pe_info_str += f"Magic: 0x{pe.OPTIONAL_HEADER.Magic:X}\n"
-        pe_info_str += f"Address of Entry Point: 0x{pe.OPTIONAL_HEADER.AddressOfEntryPoint:X}\n"
-        pe_info_str += f"Image Base: 0x{pe.OPTIONAL_HEADER.ImageBase:X}\n"
-        # 추가 필요한 정보를 문자열에 추가합니다.
+            # Output information
+            result += f"Machine Type: {hex(machine_type)}\n"
+            result += f"Characteristics: {hex(characteristics)}\n"
+            result += f"Optional Header Size: {optional_header_size}\n"
+            result += f"Linker Version: {major_linker_version}.{minor_linker_version}\n"
+            result += f"Size of Code: {size_of_code}\n"
+            result += f"Size of Initialized Data: {size_of_initialized_data}\n"
+            result += f"Size of Uninitialized Data: {size_of_uninitialized_data}\n"
+            result += f"Entry Point Address: {hex(address_of_entry_point)}\n"
+            result += f"Base of Code: {hex(base_of_code)}\n"
+            result += f"Base of Data: {hex(base_of_data)}\n"
 
-        return pe_info_str  # PE 정보를 문자열로 반환
+            # Read section headers
+            section_header_size = 40
+            num_of_sections = struct.unpack('H', file.read(2))[0]
+            result += f"\nNumber of Sections: {num_of_sections}\n"
 
-    except psutil.NoSuchProcess:
-        return f"프로세스 {pid}를 찾을 수 없습니다."
+            for _ in range(num_of_sections):
+                section_name = file.read(8).decode('utf-8').rstrip('\0')
+                virtual_size, virtual_address, size_of_raw_data, pointer_to_raw_data = struct.unpack('LLLL', file.read(section_header_size - 8))
+                characteristics = struct.unpack('L', file.read(4))[0]
+                
+                # Output section information
+                result += f"\nSection: {section_name}\n"
+                result += f"Virtual Size: {virtual_size}\n"
+                result += f"Virtual Address: {hex(virtual_address)}\n"
+                result += f"Size of Raw Data: {size_of_raw_data}\n"
+                result += f"Pointer to Raw Data: {hex(pointer_to_raw_data)}\n"
+                result += f"Characteristics: {hex(characteristics)}\n"
+
     except Exception as e:
-        return "오류 발생: " + str(e)
+        result += f"Error: {e}\n"
+
+    return result

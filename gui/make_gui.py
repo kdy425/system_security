@@ -19,7 +19,7 @@ import hashlib
 ####################################################################################
 #외부 함수 import
 from load_dll import load_dll
-#from peviewer import get_pe_info
+from peviewer import get_pe_info
 from location import get_process_location
 from terminate import terminate_process
 from network_info import get_network_info
@@ -143,14 +143,14 @@ def run_load_dll(self):
         return f"Error: {e.returncode} - {e.output}"
 
 
-'''def run_peviewer(self):
+def run_peviewer(self):
     value = self.get_pid()
     pid = int(value)
     try:
         result = get_pe_info(pid)
         return result
     except subprocess.CalledProcessError as e:
-        return f"Error: {e.returncode} - {e.output}"'''
+        return f"Error: {e.returncode} - {e.output}"
     
 def run_get_network_info(self):
     value = self.get_pid()
@@ -230,14 +230,15 @@ class ProcessViewerApp:
 
         # 컨텍스트 메뉴 생성
         self.context_menu = Menu(self.root, tearoff=0)
-        #self.context_menu.add_command(label="PEViewer", command=self.run_peviewer_and_display_result)
         self.context_menu.add_command(label="dll", command=self.run_load_dll_and_display_result)
         self.context_menu.add_command(label="location", command=self.run_get_process_location_and_display_result)
+        self.context_menu.add_command(label="PEViewer", command=self.run_peviewer_and_display_result)
         self.context_menu.add_command(label="network info", command=self.run_get_process_network_info_result)
         self.context_menu.add_command(label="process info", command=self.run_get_process_info_result)
         self.context_menu.add_command(label="Copy", command=self.copy_selected_row)
         
-         ## "Copy" 메뉴 항목에 대한 동작
+
+        ## "Copy" 메뉴 항목에 대한 동작
     def copy_selected_row(self):
         item = self.tree.selection()[0]  # 선택한 행의 ID 가져오기
         values = self.tree.item(item, "values")  # 선택한 행의 값(프로세스 정보) 가져오기
@@ -245,6 +246,7 @@ class ProcessViewerApp:
         self.root.clipboard_clear()
         self.root.clipboard_append(selected_row_text)
         self.root.update()
+
 
 
     def run_vt_scan(self):
@@ -418,7 +420,7 @@ class ProcessViewerApp:
         result_text.pack(fill=tk.BOTH, expand=True)
 
 
-    '''def run_peviewer_and_display_result(self):
+    def run_peviewer_and_display_result(self):
         result = run_peviewer(self)
         
         # 실행 결과를 표시할 새 창 생성
@@ -428,7 +430,7 @@ class ProcessViewerApp:
        # 스크롤 가능한 텍스트 위젯 생성
         result_text = scrolledtext.ScrolledText(result_window, wrap=tk.WORD)
         result_text.insert(tk.END, result)
-        result_text.pack(fill=tk.BOTH, expand=True)'''
+        result_text.pack(fill=tk.BOTH, expand=True)
     
 
     # 컨텍스트 메뉴 표시

@@ -29,7 +29,7 @@ def get_process_parent_child(pid):
         process_info += f"Parent PID: {parent_pid}, Parent Name: {parent_name}\n"
         process_info += "Child PIDs and Names:\n"
         for child, child_name in zip(child_processes, child_names):
-            process_info += f"  Child PID: {child.pid}, Child Name: {child_name}\n"
+            process_info += f"Child PID: {child.pid}, Child Name: {child_name}\n"
 
         return process_info
     except psutil.NoSuchProcess:
@@ -47,7 +47,7 @@ import os
 import struct
 import psutil
 
-def read_pe_header(pid):
+'''def read_pe_header(pid):
     result = ""  # Initialize an empty string to store the result
     try:
         # Get process information
@@ -113,7 +113,7 @@ def read_pe_header(pid):
     except Exception as e:
         result += f"Error: {e}\n"
 
-    return result
+    return result'''
 
 # Example usage
 #pid = 24276  # Replace with the desired PID
@@ -126,10 +126,10 @@ def read_pe_header(pid):
 def get_process_info(pid):
     process_name = get_process_name(pid)
     get_pp_info = get_process_parent_child(pid)
-    get_pe = read_pe_header(pid)
+    #get_pe = read_pe_header(pid)
 
     # Combine the information into a single string
-    process_info_text = f"process Info for {process_name}\n\n{get_pp_info}\n\nPE header for {process_name}\n{get_pe}"
+    process_info_text = f"process Info for {process_name}\n\n{get_pp_info}\n\n"#PE header for {process_name}\n{get_pe}"
 
     return process_info_text
 
