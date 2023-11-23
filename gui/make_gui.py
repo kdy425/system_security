@@ -238,17 +238,26 @@ class ProcessViewerApp:
         self.context_menu.add_command(label="Copy", command=self.copy_selected_row)
         
 
-        ## "Copy" 메뉴 항목에 대한 동작
+    # "Copy" 메뉴 항목에 대한 동작  SM_11.24_추가
     def copy_selected_row(self):
         item = self.tree.selection()[0]  # 선택한 행의 ID 가져오기
         values = self.tree.item(item, "values")  # 선택한 행의 값(프로세스 정보) 가져오기
-        selected_row_text = "\t".join(map(str, values))
+        selected_pid = values[0]
+        selected_name = values[1]
+
+        # 컨텍스트 메뉴 생성
+        copy_menu = Menu(self.root, tearoff=0)
+        copy_menu.add_command(label="pid", command=lambda: self.copy_to_clipboard(selected_pid))
+        copy_menu.add_command(label="name", command=lambda: self.copy_to_clipboard(selected_name))
+        copy_menu.post(self.root.winfo_pointerx(), self.root.winfo_pointery())
+
+
+    # 클립보드로 복사하는 함수  SM_11.24_추가
+    def copy_to_clipboard(self, value):
         self.root.clipboard_clear()
-        self.root.clipboard_append(selected_row_text)
+        self.root.clipboard_append(value)
         self.root.update()
-
-
-
+    
     def run_vt_scan(self):
         # VirusTotal 스캔 실행 함수
         vt_result_window = tk.Toplevel(self.root)
