@@ -5,6 +5,7 @@ def terminate_process(pid):
     try:
         process = psutil.Process(pid)
         process.terminate()
+        process.wait()
         return f"프로세스 PID {pid}가 성공적으로 종료되었습니다."
     except psutil.NoSuchProcess:
         return f"프로세스 PID {pid}를 찾을 수 없습니다."
