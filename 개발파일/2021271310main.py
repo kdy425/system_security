@@ -9,9 +9,6 @@ from tabulate import tabulate
 import os
 import time
 import ctypes
-import matplotlib.pyplot as plt
-from collections import deque
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import sys
 from tkinter import scrolledtext, Scrollbar
 from tkinter import Menu  # 컨텍스트 메뉴 생성을 위해 추가
@@ -24,7 +21,6 @@ from peviewer import get_pe_info
 from location import get_process_location
 from terminate import terminate_process
 ####################################################################################
-
 def get_processes():
     procs = []  #각 프로세스의 정보를 저장 리스트
     for p in psutil.process_iter(): #현재 실행 중인 모든 프로세스를 순회
@@ -159,17 +155,11 @@ def run_peviewer(self):
 class ProcessViewerApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("process viewer")
+        self.root.title("프로세스 뷰어")
          # 열 별로 정렬 방향을 저장할 변수
         self.sort_direction = {}
-        #######################추가코드###############################
-        self.create_widgets()
-        self.current_procs = []  # 현재 모니터링 중인 프로세스 PID
-        self.timer_ids = []  # 타이머 식별자
-        self.previous_memory_usage = {}  # 이전 메모리 사용량
-        self.new_pids = []  # 입력받은 새로운 프로세스 PID
-        ##############################################################
-
+        
+        
         # 프로세스 정보를 저장할 표(Table) 생성
         self.tree = ttk.Treeview(root, columns=list(procs[0].keys()), show="headings")
         for key in procs[0].keys():
@@ -200,10 +190,13 @@ class ProcessViewerApp:
         self.packet_button = ttk.Button(button_frame, text="packet capture", command=self.run_packet_capture)
         self.packet_button.pack(side="left", padx=0)
 
-        ###추가사항-disk/io#####
-        self.disk_button = ttk.Button(button_frame, text="Disk", command=self.run_disk_monitoring)
-        self.disk_button.pack(side="left", padx=0)
-        #######
+        # "PID Monitoring" button(11/25)
+        self.packet_button = ttk.Button(button_frame, text="Monitoring", command=self.Pid_monitoring)
+        self.packet_button.pack(side="left", padx=0)
+
+        #"Disk_I/O" button(11/25)
+        self.packet_button = ttk.Button(button_frame, text="Disk_I/O", command=self.run_disk_io)
+        self.packet_button.pack(side="left", padx=0)
 
         # 표 스크롤바 추가
         self.scrollbar = ttk.Scrollbar(root, orient="vertical", command=self.tree.yview)
@@ -223,42 +216,20 @@ class ProcessViewerApp:
         self.context_menu.add_command(label="PEViewer", command=self.run_peviewer_and_display_result)
         self.context_menu.add_command(label="dll", command=self.run_load_dll_and_display_result)
         self.context_menu.add_command(label="location", command=self.run_get_process_location_and_display_result)
-        self.context_menu.add_command(label="Graphy", command=self.graphy)
+
+    def Pid_monitoring(self):
+        
+        app = tk.Tk()
+        app.title("PID Monitoring")
+
+        # Set the window size
+        app.geometry("700x700")  # 창 크기 조절
 
         
-###########################추가코드###########################
-    def create_widgets(self):
-        self.pid_entry = ttk.Entry(self.root)
-        self.pid_entry.pack(side="bottom", pady=10)
-        ttk.Button(self.root, text="Start Monitoring", command=self.start_monitoring).pack(pady=10)
-        ttk.Button(self.root, text="Stop Monitoring", command=self.stop_monitoring_button_click).pack(pady=10)
-        self.log_text = tk.Text(self.root, height=30, width=60)
-        self.log_text.pack(side="bottom", pady=10)
+        
 
 
 
-    def run_disk_monitoring(self):
-        def disk_monitoring():
-            while True:
-                disk_io = psutil.disk_io_counters()
-                result = (
-                    f"Read Disk (bytes): {disk_io.read_bytes}\n"
-                    f"Write disk (bytes): {disk_io.write_bytes}\n"
-                    f"Read Disk (count): {disk_io.read_count}\n"
-                    f"Write disk (count): {disk_io.write_count}\n"
-                    f"Disk Read Time (ms): {disk_io.read_time}\n"
-                    f"Disk Write Time (ms): {disk_io.write_time}\n"
-                    "----\n"
-                )
-                self.log_text.insert(tk.END, result)
-                self.log_text.yview(tk.END)
-                time.sleep(1)
-
-        # Create a new thread for disk monitoring
-        threading.Thread(target=disk_monitoring, daemon=True).start()
-
-    
-###############################################################
 
     def run_packet_capture(self):
     # 패킷 캡처 함수
@@ -267,7 +238,7 @@ class ProcessViewerApp:
 
         # GUI 생성
         app = tk.Tk()
-        app.title("프로세스 뷰어 및 패킷 캡처")
+        app.title("Process Viewer && Packet Capture")
 
         # Set the window size
         app.geometry("700x400")  # 창 크기 조절
@@ -279,13 +250,12 @@ class ProcessViewerApp:
         interface_entry = ttk.Entry(pkt_frame)
         interface_entry.grid(row=0, column=1)
 
-        start_button = ttk.Button(pkt_frame, text="패킷 캡처 시작", command=lambda: threading.Thread(target=packet_capture, args=(interface_entry.get(),)).start())
+        start_button = ttk.Button(pkt_frame, text="Start Packet Capture", command=lambda: threading.Thread(target=packet_capture, args=(interface_entry.get(),)).start())
         start_button.grid(row=0, column=2)
 
         # 패킷 캡처 결과에 스크롤바 추가
         pkt_listbox = tk.Listbox(pkt_frame)
         pkt_listbox.grid(row=1, column=0, columnspan=3, sticky="nsew")  # Make the listbox expand
-        
 
 
         pkt_frame.columnconfigure(0, weight=1)
@@ -350,135 +320,6 @@ class ProcessViewerApp:
         for i, proc in enumerate(procs):
             self.tree.insert("", "end", values=list(proc.values()))
 
-####################################추가코드###################################################
-    def start_monitoring(self):
-        try:
-            self.new_pids = [int(pid.strip()) for pid in self.pid_entry.get().split(',')]
-            configure_logging()
-
-            # 현재 모니터링 중인 프로세스가 있다면 중지
-            if self.current_procs:
-                self.stop_monitoring()
-
-            # 구분선
-            separator_line = "\n----------------------------------------\n"
-            self.log_text.insert(tk.END, separator_line)
-            self.log_text.yview(tk.END)
-
-            # 사용량 출력 시작
-            self.print_one_second_usage()
-
-        except ValueError:
-            logging.error("Invalid PID(s). Please enter valid integer PIDs separated by commas.")
-
-
-    
-    def print_one_second_usage(self):
-        # 1초 사용량 출력
-        for pid in self.new_pids:
-            self.monitor_process(pid)
-
-        separator_line = "\n----------------------------------------\n"
-        self.log_text.insert(tk.END, separator_line)
-        self.log_text.yview(tk.END)
-
-        # 다음 1초 동안 정보 불러오기
-        if self.current_procs:  # 현재 모니터링 중인 프로세스가 있다면 계속 출력
-            self.timer_ids.append(self.root.after(1000, self.print_one_second_usage))
-
-    def monitor_process(self, pid):
-        try:
-            # PID에 대한 CPU 및 메모리 사용량 불러오기
-            process = psutil.Process(pid)
-            cpu_percent = round(process.cpu_percent(interval=0.05), 2)
-            current_memory_usage = round(process.memory_info().rss / (1024 ** 2), 2)
-
-            if pid in self.previous_memory_usage:
-                memory_change = round(current_memory_usage - self.previous_memory_usage[pid], 2)
-            else:
-                memory_change = 0.0
-
-            # 사용량 정보
-            log_message = (
-                f"\n-------- Process Resource Usage Log --------\n"
-                f"Process PID: {pid}\n"
-                f"CPU usage: {cpu_percent}%\n"
-                f"Memory usage: {current_memory_usage} MB\n"
-                f"Memory change amount: {memory_change} MB\n"
-            )
-
-            self.log_text.insert(tk.END, log_message)
-            self.log_text.yview(tk.END)
-
-            self.previous_memory_usage[pid] = current_memory_usage
-
-        except psutil.NoSuchProcess as e:
-            logging.error(f"Process not found with PID {pid}: {e}")
-        except Exception as e:
-            logging.error(f"An error has occurred: {e}")
-
-    def stop_monitoring_button_click(self):
-        self.stop_monitoring()
-
-    def stop_monitoring(self):
-        # 현재 실행 중인 타이머 중지 후 상태 초기화
-        for timer_id in self.timer_ids:
-            self.root.after_cancel(timer_id)
-
-        self.current_procs = []
-        self.timer_ids = []
-        self.previous_memory_usage = {}
-
-        # 마지막 구분선 이후의 출력 삭제
-        idx = self.log_text.search("\n----------------------------------------\n", tk.END)
-        if idx:
-            self.log_text.delete(idx, tk.END)
-
-        # "-------- Process Resource Usage Log --------" 라인을 추가하여 더 이상의 로그가 출력되지 않도록 함
-        self.log_text.insert(tk.END, "-------- Process Resource Usage Log --------\n")
-
-
-
-    def update_cpu_graph(self):
-        max_data_points = 50
-        cpu_usage_data = deque(maxlen=max_data_points)
-        time_data = deque(maxlen=max_data_points)
-
-        plt.ion()
-        fig, ax1 = plt.subplots()
-
-        ax1.set_xlabel('Time')
-        ax1.set_ylabel('CPU utilization (%)', color='tab:blue')
-
-        def inner_update():
-            try:
-                process = psutil.Process(self)
-                cpu_percent = process.cpu_percent(interval=1)
-
-                cpu_usage_data.append(cpu_percent)
-                time_data.append(time.strftime('%H:%M:%S'))
-
-                ax1.clear()
-                ax1.set_xlabel('Time')
-                ax1.set_ylabel('CPU utilization (%)', color='tab:blue')
-                ax1.plot(time_data, cpu_usage_data, color='tab:blue', label='CPU 사용률')
-
-            # y 축 범위를 자동으로 조정
-                ax1.relim()
-                ax1.autoscale_view()
-
-                fig.tight_layout()
-                plt.xticks(rotation=45)
-                plt.draw()
-                plt.pause(0.01)
-            except psutil.NoSuchProcess:
-                print(f"Unable to find process corresponding to PID {self}")
-                plt.ioff()
-
-        return inner_update
-#################################################################################################
-
-
    # 표의 행을 클릭할 때 호출되는 함수
     def on_item_click(self, event):
         item = self.tree.selection()[0]  # 선택한 행의 ID 가져오기
@@ -495,6 +336,34 @@ class ProcessViewerApp:
         return result
     
 
+
+
+    def run_disk_io(self):
+        # 디스크 I/O 모니터링 함수
+        def monitor_disk_io(interval=1):
+            while True:
+                disk_io = psutil.disk_io_counters()
+                result_text.insert(tk.END, f"Read Disk (bytes): {disk_io.read_bytes}\n")
+                result_text.insert(tk.END, f"Write disk (bytes): {disk_io.write_bytes}\n")
+                result_text.insert(tk.END, f"Read Disk (count): {disk_io.read_count}\n")
+                result_text.insert(tk.END, f"Write disk (count): {disk_io.write_count}\n")
+                result_text.insert(tk.END, f"Disk Read Time (ms): {disk_io.read_time}\n")
+                result_text.insert(tk.END, f"Disk Read Time (ms): {disk_io.write_time}\n")
+                result_text.insert(tk.END, "----\n")
+                time.sleep(interval)
+
+        # 새로운 창 생성
+        disk_io_window = tk.Toplevel(self.root)
+        disk_io_window.title("Disk I/O Monitor")
+
+        # 스크롤 가능한 텍스트 위젯 생성
+        result_text = scrolledtext.ScrolledText(disk_io_window, wrap=tk.WORD)
+        result_text.pack(fill=tk.BOTH, expand=True)
+
+        # 스레드를 사용하여 Disk I/O 모니터링 함수 실행
+        threading.Thread(target=monitor_disk_io).start()
+
+
     def run_end_process(self):
         result = end_process(self)
         # 실행 결과를 표시할 새 창 생성
@@ -504,25 +373,8 @@ class ProcessViewerApp:
         # 스크롤 가능한 텍스트 위젯 생성
         result_text = scrolledtext.ScrolledText(result_window, wrap=tk.WORD)
         result_text.insert(tk.END, result)
-        result_text.pack(fill=tk.BOTH, expand=True)
+        result_text.pack(fill=tk.BOTH, expand=True)   
 
-##########################################################################################
-    def graphy(self):
-        # ProcessViewerApp 클래스의 객체 생성
-        process_viewer_app = ProcessViewerApp(self.root)
-    
-    # 객체의 메서드 호출
-        result = process_viewer_app.update_cpu_graph()
-    
-    # 실행 결과를 표시할 새 창 생성
-        result_window = tk.Toplevel(self.root)
-        result_window.title("location Result")
-    
-    # 스크롤 가능한 텍스트 위젯 생성
-        result_text = scrolledtext.ScrolledText(result_window, wrap=tk.WORD)
-        result_text.insert(tk.END, result)
-        result_text.pack(fill=tk.BOTH, expand=True)
-###################################################################################
 
 
     def run_get_process_location_and_display_result(self):
@@ -568,11 +420,6 @@ class ProcessViewerApp:
     def show_context_menu(self, event):
         self.context_menu.post(event.x_root, event.y_root)
 
-##########################추가코드#############################################################
-def configure_logging():
-    # 로깅 정보 초기화
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-###############################################################################################
 
 
 def main():
