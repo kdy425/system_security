@@ -619,11 +619,10 @@ class ProcessViewerApp:
     def show_graph(self):
         # 특정 PID 값
         value = self.get_pid()
-        pid = int(value)
-        target_pid = 24828  # 원하는 PID로 변경
+        graph_pid = int(value)
 
         # 그래프 초기화
-        fig, (ax_cpu, ax_memory) = plt.subplots(2, 1,  figsize=(10, 8))
+        fig, (ax_cpu, ax_memory) = plt.subplots(2, 1, figsize=(10, 8))
         line_cpu, = ax_cpu.plot([], [], label='CPU %')
         line_memory, = ax_memory.plot([], [], label='Memory %')
 
@@ -635,22 +634,39 @@ class ProcessViewerApp:
         ax_cpu.set_title('CPU Usage')
         ax_memory.set_title('Memory Usage')
 
-        def update(frame):
-            # CPU 및 메모리 사용량 가져오기
-            cpu_percent = psutil.cpu_percent(interval=1, percpu=False)
-            memory_percent = psutil.Process(target_pid).memory_percent()
+        # 초기 데이터 설정
+        frame = 0
+        x_data = []
+        cpu_percent_data = []
+        memory_percent_data = []
+
+        def update(_):
+            nonlocal frame
+
+            # 특정 PID의 메모리 사용량 가져오기
+            process = psutil.Process(graph_pid)
+            cpu_percent = process.cpu_percent(interval=1)
+            memory_percent = process.memory_percent()
+
+            # 데이터 추가
+            x_data.append(frame)
+            cpu_percent_data.append(cpu_percent)
+            memory_percent_data.append(memory_percent)
 
             # 데이터 갱신
-            line_cpu.set_xdata(list(range(frame + 1)))
-            line_memory.set_xdata(list(range(frame + 1)))
-            line_cpu.set_ydata(cpu_percent)
-            line_memory.set_ydata(memory_percent)
+            line_cpu.set_xdata(x_data)
+            line_memory.set_xdata(x_data)
+            line_cpu.set_ydata(cpu_percent_data)
+            line_memory.set_ydata(memory_percent_data)
 
             # 그래프 업데이트
             ax_cpu.relim()
             ax_memory.relim()
             ax_cpu.autoscale_view()
             ax_memory.autoscale_view()
+
+            # frame 증가
+            frame += 1
 
         # 애니메이션 생성
         ani = FuncAnimation(fig, update, frames=None, interval=1000)
