@@ -153,6 +153,15 @@ class ProcessViewerApp:
         user_input_1 = self.entry1.get().lower()
         user_input_2 = self.entry2.get().lower()
 
+        # 예외 처리: 입력값이 모두 없는 경우
+        if not (user_input_1 or user_input_2):
+            messagebox.showinfo("경고", "최소 하나 이상의 값을 입력해주세요")  # 메시지 박스 출력
+            return
+
+        # 기본값 설정
+        user_input_1 = user_input_1 if user_input_1 else "0"
+        user_input_2 = user_input_2 if user_input_2 else "inf"
+        
         if search_criteria == "pid":
             # PID를 선택한 경우, 정확한 일치 검색, 여러 PID에 대한 검색 처리
             pids_list = self.parse_multiple_pids(user_input_1)
@@ -165,6 +174,13 @@ class ProcessViewerApp:
 
         elif search_criteria in ["cpu_usage"]:
             # CPU를 선택한 경우, 범위 기반 검색
+            # 예외 처리: 입력창 1만 입력된 경우
+            if user_input_1 and not user_input_2:
+                user_input_2 = float('inf')  # 무한대로 설정하여 상한을 무한으로 만듦
+            # 예외 처리: 입력창 2만 입력된 경우
+            elif not user_input_1 and user_input_2:
+                user_input_1 = 0  # 0으로 설정하여 하한을 0으로 만듦
+
             filtered_procs = [proc for proc in self.procs
                               if float(user_input_1) <= proc[search_criteria] <= float(user_input_2)]
 
@@ -172,6 +188,13 @@ class ProcessViewerApp:
             # Memory를 선택한 경우, 입력값을 바이트로 변환하여 범위 검색
             user_input_1_bytes = self.parse_input(user_input_1)
             user_input_2_bytes = self.parse_input(user_input_2) if user_input_2 else None  # 입력창 2가 활성화된 경우에만 값 파싱
+            # 예외 처리: 입력창 1만 입력된 경우
+            if user_input_1 and not user_input_2:
+                user_input_2 = float('inf')  # 무한대로 설정하여 상한을 무한으로 만듦
+            # 예외 처리: 입력창 2만 입력된 경우
+            elif not user_input_1 and user_input_2:
+                user_input_1 = 0  # 0으로 설정하여 하한을 0으로 만듦
+            
             filtered_procs = [proc for proc in self.procs if
                               user_input_1_bytes <= proc[search_criteria] <= user_input_2_bytes]
         else:
