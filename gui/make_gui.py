@@ -814,47 +814,6 @@ class get_VT_result:
         # "실행 파일 해시화" 버튼이 클릭되었을 때 실행되는 함수
         self.result_text.delete(1.0, tk.END)  # 결과 텍스트 초기화
 
-        # 사용자에게 해시 알고리즘을 선택하도록 하는 작은 창 표시_11.29_sm_추가=======================
-        algorithm_choice = simpledialog.askstring("해시 알고리즘 선택", "MD5 또는 SHA256 중 선택하세요.", initialvalue="MD5")
-
-        # 선택한 알고리즘에 따라 해시 계산_11.29_sm_추가
-        if algorithm_choice and algorithm_choice.upper() in ['MD5', 'SHA256']:
-            hash_function = hashlib.md5 if algorithm_choice.upper() == 'MD5' else hashlib.sha256
-
-            # 새 창을 만들어 해시 값을 표시할 Text 위젯 생성
-            hash_window = tk.Toplevel(self.root)
-            hash_window.title(f"{algorithm_choice} 해시 값")
-
-            hash_text = scrolledtext.ScrolledText(hash_window, wrap=tk.WORD, width=80, height=30)
-            hash_text.pack(padx=10, pady=10)
-
-            # 메인 창의 결과 텍스트 초기화
-            self.result_text.delete(1.0, tk.END)
-            
-            try:
-                processes = [psutil.Process(pid) for pid in psutil.pids()]
-
-                for process in processes:
-                    process_name = process.name()
-                    hash_value = self.get_process_hash(process, hash_function)
-
-                    print(f"프로세스: {process_name},    {algorithm_choice} 해시: {hash_value}")
-                    if hash_value:
-                        hash_text.insert(tk.END, f"프로세스: {process_name},    {algorithm_choice} 해시: {hash_value}\n")
-                    else:
-                        continue
-
-            except Exception as e:
-                self.stop_label.config(text="해시화 에러!", fg="red")
-            finally:
-                self.stop_label.config(text=f"전체 실행 파일 {algorithm_choice} 해시화가 완료! 파일명은 hash_{algorithm_choice.lower()}.txt입니다.", fg="red")
-
-    def hash_executables_md5(self):
-        self.hash_executables(algorithm_choice='MD5')
-
-    def hash_executables_sha256(self):
-        self.hash_executables(algorithm_choice='SHA256')
-        
         try:
             processes = [psutil.Process(pid) for pid in psutil.pids()]
 
@@ -882,27 +841,7 @@ class get_VT_result:
             return md5_hash
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess, FileNotFoundError, Exception):
             return None
-    
-    def get_process_hash(self, process, hash_function):
-        try:
-            executable_path = process.exe()
-            with open(executable_path, "rb") as file:
-                content = file.read()
-                hash_value = hash_function(content).hexdigest()
-            return hash_value
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess, FileNotFoundError, Exception):
-            return None
-
-    def get_process_sha256(self,process):
-        try:
-            executable_path = process.exe()
-            with open(executable_path, "rb") as file:
-                content = file.read()
-                sha256_hash = hashlib.sha256(content).hexdigest()
-            return sha256_hash
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess, FileNotFoundError, Exception):
-            return None
-#=================================_11.29_sm_추가=================================
+            
     def browse_file(self):
         file_path = filedialog.askopenfilename()
         self.file_path_label.config(text=f"선택된 파일: {file_path}")
