@@ -27,7 +27,7 @@ def get_process_parent_child(pid):
         # 출력을 준비
         process_info = f"Process PID: {pid}, Name: {process_name}\n"
         process_info += f"Parent PID: {parent_pid}, Parent Name: {parent_name}\n"
-        process_info += "Child PIDs and Names:\n"
+        #process_info += "Child PIDs and Names:\n"
         for child, child_name in zip(child_processes, child_names):
             process_info += f"Child PID: {child.pid}, Child Name: {child_name}\n"
 
@@ -36,18 +36,18 @@ def get_process_parent_child(pid):
         return "Process with PID {} not found.".format(pid)
 
 # 예제 사용
-'''
-pid = 23672  # 검색하려는 프로세스의 PID로 교체
+
+'''pid = 4  # 검색하려는 프로세스의 PID로 교체
 result = get_process_parent_child(pid)
-print(result)
-'''
+print(result)'''
 
 
-import os
+
+'''import os
 import struct
 import psutil
 
-'''def read_pe_header(pid):
+def read_pe_header(pid):
     result = ""  # Initialize an empty string to store the result
     try:
         # Get process information
