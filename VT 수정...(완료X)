@@ -1,3 +1,5 @@
+from tkinter import simpledialog
+
 #바이러스 토탈 실행행
 class get_VT_result:
     def __init__(self, root):
