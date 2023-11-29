@@ -1,0 +1,139 @@
+#바이러스 토탈 실행행
+class get_VT_result:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("VirusTotal 결과")
+        self.stop_flag = False  # 검사 중지 플래그 추가
+        self.create_widgets()
+        self.completed_tests = 0  # 완료한 검사 횟수
+        self.wait_time = 60  # 초기 대기 시간 설정 (초)
+
+    def create_widgets(self):
+
+        # "실행 파일 해시화" 버튼 추가
+        self.hash_button = tk.Button(self.root, text="전체 실행 파일 해시화", command=self.hash_executables)
+        self.hash_button.pack(pady=5)
+        # API 키를 입력 받을 Entry 위젯 추가
+        self.api_key_label = Label(self.root, text="VIRUS TOTAL 접속 API키")
+        self.api_key_label.pack()
+
+        self.api_key_entry = Entry(self.root, width=40)
+        self.api_key_entry.pack(pady=5)
+
+        # 파일을 선택할 버튼과 선택된 파일 경로를 표시할 레이블 추가
+        self.file_path_label = Label(self.root, text="대조할 정보 파일 선택")
+        self.file_path_label.pack(pady=5)
+
+        self.select_file_button = Button(self.root, text="파일 선택", command=self.browse_file)
+        self.select_file_button.pack(pady=5)
+
+        # 파일 선택 설명 레이블 추가
+        self.file_desc_label = Label(self.root, text="이 검사는 VirusTotal의 데이터베이스를 이용합니다.\n"
+                                                     "무료 계정의 경우 1분에 1번의 검사를 실행할 수 있으며, 1번 검사에 4개의 값을 검사합니다.")
+        self.file_desc_label.pack(pady=10)
+
+        self.result_text = scrolledtext.ScrolledText(self.root, wrap=tk.WORD, width=80, height=30)
+        self.result_text.pack(padx=10, pady=10)
+
+        # 검사 실행 및 중지 버튼 추가
+        self.run_button = tk.Button(self.root, text="실행", command=self.start_vt_thread)
+        self.run_button.pack(side=tk.LEFT, padx=5)
+
+        self.stop_button = tk.Button(self.root, text="검사 종료", command=self.stop_vt)
+        self.stop_button.pack(side=tk.RIGHT, padx=5)
+
+        self.stop_label = tk.Label(self.root, text="", fg="red", anchor="w")
+        self.stop_label.pack(side=tk.RIGHT, padx=5, fill="both")
+
+    def hash_executables(self):
+        # "실행 파일 해시화" 버튼이 클릭되었을 때 실행되는 함수
+        self.result_text.delete(1.0, tk.END)  # 결과 텍스트 초기화
+
+        # 사용자에게 해시 알고리즘을 선택하도록 하는 작은 창 표시
+        algorithm_choice = simpledialog.askstring("해시 알고리즘 선택", "MD5 또는 SHA256 중 선택하세요.", initialvalue="MD5")
+
+        # 선택한 알고리즘에 따라 해시 계산
+        if algorithm_choice and algorithm_choice.upper() in ['MD5', 'SHA256']:
+            hash_function = hashlib.md5 if algorithm_choice.upper() == 'MD5' else hashlib.sha256
+
+            # 새 창을 만들어 해시 값을 표시할 Text 위젯 생성
+            hash_window = tk.Toplevel(self.root)
+            hash_window.title(f"{algorithm_choice} 해시 값")
+
+            hash_text = scrolledtext.ScrolledText(hash_window, wrap=tk.WORD, width=80, height=30)
+            hash_text.pack(padx=10, pady=10)
+
+            # 메인 창의 결과 텍스트 초기화
+            self.result_text.delete(1.0, tk.END)
+
+            try:
+                processes = [psutil.Process(pid) for pid in psutil.pids()]
+
+                for process in processes:
+                    process_name = process.name()
+                    hash_value = self.get_process_hash(process, hash_function)
+
+                    print(f"프로세스: {process_name},    {algorithm_choice} 해시: {hash_value}")
+                    if hash_value:
+                        hash_text.insert(tk.END, f"프로세스: {process_name},    {algorithm_choice} 해시: {hash_value}\n")
+                    else:
+                        continue
+
+            except Exception as e:
+                self.stop_label.config(text="해시화 에러!", fg="red")
+            finally:
+                self.stop_label.config(text=f"전체 실행 파일 {algorithm_choice} 해시화가 완료! 파일명은 hash_{algorithm_choice.lower()}.txt입니다.", fg="red")
+
+    # def hash_executables_md5(self):
+    #     self.hash_executables(algorithm_choice='MD5')
+
+    # def hash_executables_sha256(self):
+    #     self.hash_executables(algorithm_choice='SHA256')
+
+        try:
+            processes = [psutil.Process(pid) for pid in psutil.pids()]
+
+            with open("hash.txt", "w") as hash_file:
+                for process in processes:
+                    process_name = process.name()
+                    md5_hash = self.get_process_md5(process)
+
+                    print(f"프로세스: {process_name},    해시: {md5_hash}")
+                    if md5_hash:
+                        hash_file.write(f"{md5_hash}\n")
+                    else:
+                        continue
+        except Exception as e:
+            self.stop_label.config(text="해시화 에러!", fg="red")
+        finally:
+             self.stop_label.config(text="전체 실행 파일 해시화가 완료! 파일명은 hash.txt입니다.", fg="red")
+
+    def get_process_md5(self, process):
+        try:
+            executable_path = process.exe()
+            with open(executable_path, "rb") as file:
+                content = file.read()
+                md5_hash = hashlib.md5(content).hexdigest()
+            return md5_hash
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess, FileNotFoundError, Exception):
+            return None
+
+    def get_process_hash(self, process, hash_function):
+        try:
+            executable_path = process.exe()
+            with open(executable_path, "rb") as file:
+                content = file.read()
+                hash_value = hash_function(content).hexdigest()
+            return hash_value
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess, FileNotFoundError, Exception):
+            return None
+
+    def get_process_sha256(self,process):
+        try:
+            executable_path = process.exe()
+            with open(executable_path, "rb") as file:
+                content = file.read()
+                sha256_hash = hashlib.sha256(content).hexdigest()
+            return sha256_hash
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess, FileNotFoundError, Exception):
+            return None
