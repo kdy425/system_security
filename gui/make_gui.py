@@ -496,29 +496,45 @@ class ProcessViewerApp:
     def run_packet_capture(self):
     # 패킷 캡처 함수
         def packet_capture(interface):
-            sniff(iface=interface, prn=lambda x: pkt_listbox.insert(tk.END, str(x)))
+            nonlocal capture_flag
+            sniff(iface=interface, prn=lambda x: pkt_listbox.insert(tk.END, str(x)), stop_filter=lambda x: not capture_flag)
+
+        def start_capture():
+            nonlocal capture_flag
+            capture_flag = True
+            interface = interface_entry.get()
+            threading.Thread(target=packet_capture, args=(interface,)).start()
+
+        def stop_capture():
+            nonlocal capture_flag
+            capture_flag = False
 
         # GUI 생성
         app = tk.Tk()
         app.title("프로세스 뷰어 및 패킷 캡처")
 
-        # Set the window size
-        app.geometry("700x400")  # 창 크기 조절
+        # 창 크기 조절
+        app.geometry("700x400")
 
         # 패킷 캡처
         pkt_frame = ttk.Frame(app)
-        pkt_frame.pack(fill="both", expand=True)  # 창 채우기
+        pkt_frame.pack(fill="both", expand=True)
+
+        interface_label = ttk.Label(pkt_frame, text="네트워크 인터페이스:")
+        interface_label.grid(row=0, column=0, padx=5, pady=5, sticky="e")
 
         interface_entry = ttk.Entry(pkt_frame)
-        #interface_entry.grid(row=0, column=1)
+        interface_entry.grid(row=0, column=1, padx=5, pady=5)
 
-        start_button = ttk.Button(pkt_frame, text="패킷 캡처 시작", command=lambda: threading.Thread(target=packet_capture, args=(interface_entry.get(),)).start())
-        start_button.grid(row=0, column=2)
+        start_button = ttk.Button(pkt_frame, text="패킷 캡처 시작", command=start_capture)
+        start_button.grid(row=0, column=2, padx=5, pady=5)
+
+        stop_button = ttk.Button(pkt_frame, text="패킷 캡처 중지", command=stop_capture)
+        stop_button.grid(row=0, column=3, padx=5, pady=5)
 
         # 패킷 캡처 결과에 스크롤바 추가
         pkt_listbox = tk.Listbox(pkt_frame)
-        pkt_listbox.grid(row=1, column=0, columnspan=3, sticky="nsew")  # Make the listbox expand
-
+        pkt_listbox.grid(row=1, column=0, columnspan=4, sticky="nsew", padx=5, pady=5)
 
         pkt_frame.columnconfigure(0, weight=1)
         pkt_frame.rowconfigure(1, weight=1)
@@ -526,13 +542,14 @@ class ProcessViewerApp:
         # 스크롤바 추가
         scrollbar = Scrollbar(pkt_frame, orient=tk.VERTICAL)
         scrollbar.config(command=pkt_listbox.yview)
-        scrollbar.grid(row=1, column=3, sticky="ns")
+        scrollbar.grid(row=1, column=4, sticky="ns", padx=5, pady=5)
 
         pkt_listbox.config(yscrollcommand=scrollbar.set)
 
+        # 캡처 플래그
+        capture_flag = False
+
         app.mainloop()
-
-
 
     # 메모리 크기를 숫자 값으로 변환하기 위한 함수
     def convert_memory(self, memory_str):
@@ -855,6 +872,7 @@ class ProcessViewerApp:
         separator_line = f"\n---------------- {current_time} ----------------\n"
         app["log_text"].insert(tk.END, separator_line)
         app["log_text"].yview(tk.END)
+        
         # 1초 사용량 출력
         for pid in app["new_pids"]:
             monitor_process(app, pid)
