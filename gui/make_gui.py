@@ -72,12 +72,11 @@ def get_processes():
             'name': name,
             'create_time': create_time,
             'cpu_usage(%)': cpu_usage,
-            'cpu_affinity': cpu_affinity,
-            'status': status,
+            #'cpu_affinity': cpu_affinity,
             'memory': get_size(memory),
             'memory_bytes': memory, #ME_11.24_검색기능필요
             'user': user,
-            
+            'status': status,
             'network_usage': "Yes" if network_connections else "No",  # 네트워크 사용 여부 추가
         })
     return procs
@@ -266,7 +265,7 @@ class ProcessViewerApp:
         self.context_menu.add_command(label="location", command=self.run_get_process_location_and_display_result)
         self.context_menu.add_command(label="PEViewer", command=self.run_peviewer_and_display_result)
         self.context_menu.add_command(label="network info", command=self.run_get_process_network_info_result)
-        self.context_menu.add_command(label="process info", command=self.run_get_process_info_result)
+        self.context_menu.add_command(label="부모 자식 프로세스", command=self.run_get_process_info_result)
         #"Disk_I/O" button(11/25)
         #self.context_menu.add_command(label="Disk_I/O", command=self.run_disk_io)
 
@@ -641,7 +640,7 @@ class ProcessViewerApp:
         result = run_get_process_info(self)
         # 실행 결과를 표시할 새 창 생성
         result_window = tk.Toplevel(self.root)
-        result_window.title("process information")
+        result_window.title("부모 자식 프로세스")
         
         # 스크롤 가능한 텍스트 위젯 생성
         result_text = scrolledtext.ScrolledText(result_window, wrap=tk.WORD)
@@ -726,8 +725,11 @@ class ProcessViewerApp:
         value = self.get_pid()
         graph_pid = int(value)
 
+        # 새로운 Figure 객체 생성
+        fig = plt.figure(num='graph', figsize=(10, 8))
+
         # 그래프 초기화
-        fig, (ax_cpu, ax_memory) = plt.subplots(2, 1, figsize=(10, 8))
+        ax_cpu, ax_memory = fig.subplots(2, 1)
         line_cpu, = ax_cpu.plot([], [], label='CPU %')
         line_memory, = ax_memory.plot([], [], label='Memory %')
 
@@ -778,6 +780,7 @@ class ProcessViewerApp:
 
         # 그래프 표시
         plt.show()
+
 
     def is_admin(self):     #관리자권한으로 코드를 실행
         try:
