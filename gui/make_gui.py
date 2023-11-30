@@ -404,6 +404,12 @@ class ProcessViewerApp:
             return
 
 
+        # 예외 처리: 검색 결과가 없는 경우
+        if not filtered_procs:
+            messagebox.showinfo("경고", "검색 결과가 없습니다. 검색 조건을 다시 한번 확인해주세요.")
+            return
+        
+
         # 표 초기화
         for item in self.tree.get_children():
             self.tree.delete(item)
@@ -442,6 +448,7 @@ class ProcessViewerApp:
         if enable_entry2:
             self.entry2.configure(state='normal')
         else:
+            self.entry2.delete(0, 'end')  # 검색 옵션 변경 시, 입력창 초기화
             self.entry2.configure(state='disabled')
 
     def refresh_or_reset(self):
