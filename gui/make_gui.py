@@ -728,8 +728,12 @@ class ProcessViewerApp:
         def monitor_disk_io(interval=1):
             while True:
                 disk_io = psutil.disk_io_counters()
-                result_text.insert(tk.END, f"Read Disk (bytes): {disk_io.read_bytes}\n")
-                result_text.insert(tk.END, f"Write disk (bytes): {disk_io.write_bytes}\n")
+
+                read_bytes_mb = disk_io.read_bytes / (1024 * 1024)
+                write_bytes_mb = disk_io.write_bytes / (1024 * 1024)
+
+                result_text.insert(tk.END, f"Read Disk (MB): {read_bytes_mb:.2}\n")
+                result_text.insert(tk.END, f"Write disk (MB): {write_bytes_mb:.2f}\n")
                 result_text.insert(tk.END, f"Read Disk (count): {disk_io.read_count}\n")
                 result_text.insert(tk.END, f"Write disk (count): {disk_io.write_count}\n")
                 result_text.insert(tk.END, f"Disk Read Time (ms): {disk_io.read_time}\n")
