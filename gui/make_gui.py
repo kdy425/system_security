@@ -25,7 +25,6 @@ from setuptools import logging
 
 ####################################################################################
 #외부 함수 import
-from GUIevent import create_gui, on_read_log_button_click, run_as_admin, read_security_event_log, result_text
 from load_dll import load_dll
 from peviewer import get_pe_info
 from location import get_process_location
@@ -36,18 +35,6 @@ from process_info import get_process_info
 from GUIuses import stop_monitoring, print_one_second_usage, configure_logging, start_monitoring, toggle_monitoring
 #VT_KEY = '1462641f17f8d8412cfd1aa7b00be2d4e30ff73068549ab76463464230a9b74c' 
 ####################################################################################
-
-#프로세스 이름
-'''def get_process_name(pid):
-    process= psutil.Process(pid)
-    process_name = process.name()
-    return process_name'''
-
-#value = self.get_pid()
-#process_name = psutil.Process(value).name()
-
-
-
 
 def get_processes():
     procs = []  #각 프로세스의 정보를 저장 리스트
@@ -92,6 +79,8 @@ def get_processes():
             'status': status,
             'network_usage': "Yes" if network_connections else "No",  # 네트워크 사용 여부 추가
         })
+
+    # 종료된 프로세스 필터링
     return procs
 
 
@@ -215,7 +204,7 @@ class ProcessViewerApp:
             self.tree.column(key, width=100)
         
         # 표에 프로세스 정보 삽입
-        self.update_process_list()
+        self.update_process_list_all()
 
 
         #버튼 프레임 생성
@@ -223,7 +212,7 @@ class ProcessViewerApp:
         button_frame.pack(side="top", fill="x")
 
         # "Refresh" button
-        self.refresh_button = ttk.Button(button_frame, text="refresh", command=self.update_process_list)
+        self.refresh_button = ttk.Button(button_frame, text="refresh", command=self.refresh_or_reset)
         self.refresh_button.pack(side="left", padx=0)
 
         # "end process" button
@@ -248,11 +237,6 @@ class ProcessViewerApp:
         self.security_button = ttk.Button(button_frame, text="disk io", command=self.run_disk_io)
         self.security_button.pack(side="left", padx=0)
 
-
-        # "gui_use" button
-        self.security_button = ttk.Button(button_frame, text="process_use", command=self.run_use_gui)
-        self.security_button.pack(side="left", padx=0)
-        
 
         # "Usage Monitor" button
         self.security_button = ttk.Button(button_frame, text="Usage Monitor", command=self.run_process_monitor_app)
@@ -345,13 +329,12 @@ class ProcessViewerApp:
         self.search_button.pack(side="left", padx=5)
 
         # "Reset" 버튼_검색취소
-        self.reset_button = ttk.Button(root, text="Reset", command=self.reset_search)
+        self.reset_button = ttk.Button(root, text="cancel", command=self.update_process_list_all)
         self.reset_button.pack(side="left", padx=5)
 
     def search_processes(self):
         # 검색 결과 유지 상태로 설정
         self.is_searching = True
-
         search_criteria = self.search_criteria_var.get().lower()
         user_input_1 = self.entry1.get().lower()
         user_input_2 = self.entry2.get().lower()
@@ -404,12 +387,6 @@ class ProcessViewerApp:
             return
 
 
-        # 예외 처리: 검색 결과가 없는 경우
-        if not filtered_procs:
-            messagebox.showinfo("경고", "검색 결과가 없습니다. 검색 조건을 다시 한번 확인해주세요.")
-            return
-        
-
         # 표 초기화
         for item in self.tree.get_children():
             self.tree.delete(item)
@@ -448,21 +425,21 @@ class ProcessViewerApp:
         if enable_entry2:
             self.entry2.configure(state='normal')
         else:
-            self.entry2.delete(0, 'end')  # 검색 옵션 변경 시, 입력창 초기화
             self.entry2.configure(state='disabled')
 
     def refresh_or_reset(self):
         if self.is_searching:
             # 검색 중일 때, 검색 결과를 유지하면서 프로세스 업데이트
             self.search_processes()
+            
         else:
             # 검색 중이 아닐 때, 초기 프로세스 목록으로 업데이트
             self.update_process_list()
 
     def reset_search(self):
-        self.update_process_list_search(self.procs)
+        self.update_process_list(self.procs)
 
-    def update_process_list_search(self, processes=None):
+    def update_process_list(self, processes=None):
         processes = processes or self.procs
         for item in self.tree.get_children():
             self.tree.delete(item)
@@ -473,7 +450,6 @@ class ProcessViewerApp:
 
         # 검색 결과 유지 상태 해제
         self.is_searching = False
-
      ###################################ME_11.24_검색기능_line(88~242)#############################################
 
 
@@ -504,11 +480,6 @@ class ProcessViewerApp:
         vt_result_window = tk.Toplevel(self.root)
         vt_result_app = get_VT_result(vt_result_window)
 
-
-    def run_use_gui(self):
-        #guiuse 실행 함수
-        gui_use_window = tk.Toplevel(self.root)
-        gui_use_result_app = get_gui_use_result(gui_use_window)
 
 
 
@@ -608,7 +579,7 @@ class ProcessViewerApp:
 
 
     # 프로세스 목록을 업데이트하는 함수
-    def update_process_list(self):
+    def update_process_list_all(self):
         global procs  # 전역 변수로 procs를 사용합니다.
         procs = get_processes()
         # 표를 초기화하고 새로운 프로세스 정보를 삽입
@@ -616,6 +587,8 @@ class ProcessViewerApp:
             self.tree.delete(item)
         for i, proc in enumerate(procs):
             self.tree.insert("", "end", values=list(proc.values()))
+
+
 
    # 표의 행을 클릭할 때 호출되는 함수
     def on_item_click(self, event):
@@ -728,10 +701,8 @@ class ProcessViewerApp:
         def monitor_disk_io(interval=1):
             while True:
                 disk_io = psutil.disk_io_counters()
-
                 read_bytes_mb = disk_io.read_bytes / (1024 * 1024)
                 write_bytes_mb = disk_io.write_bytes / (1024 * 1024)
-
                 result_text.insert(tk.END, f"Read Disk (MB): {read_bytes_mb:.2}\n")
                 result_text.insert(tk.END, f"Write disk (MB): {write_bytes_mb:.2f}\n")
                 result_text.insert(tk.END, f"Read Disk (count): {disk_io.read_count}\n")
@@ -1186,116 +1157,6 @@ class get_VT_result:
         #root.mainloop()
 
 
-class get_gui_use_result:
-    def __init__(self, master):
-        self.master = master
-        self.master.title("프로세스 모니터")
-        self.master.geometry("600x500")  # 창 크기
-
-        self.create_widgets()
-        self.current_procs = []  # 현재 모니터링 중인 프로세스 PID
-        self.timer_id = None  # 타이머 식별자
-        self.previous_memory_usage = {}  # 이전 메모리 사용량
-        self.new_pids = []  # 입력받은 새로운 프로세스 PID
-        self.monitoring_active = False  # 모니터링 활성화 여부 플래그
-
-    def create_widgets(self):
-        # GUI 위젯 생성
-        ttk.Label(self.master, text="Enter the PIDs of the processes to monitor (comma-separated):").pack(pady=10)
-        self.pid_entry = ttk.Entry(self.master)
-        self.pid_entry.pack(pady=10)
-        self.start_button = ttk.Button(self.master, text="Start Monitoring", command=self.toggle_monitoring)
-        self.start_button.pack(pady=10)
-        self.stop_button = ttk.Button(self.master, text="Stop Monitoring", command=self.stop_monitoring, state=tk.DISABLED)
-        self.stop_button.pack(pady=10)
-        self.log_text = tk.Text(self.master, height=30, width=60)
-        self.log_text.pack(pady=10)
-
-    def toggle_monitoring(self):
-        if self.monitoring_active:
-            self.stop_monitoring()
-        else:
-            self.start_monitoring()
-
-    def start_monitoring(self):
-        try:
-            self.new_pids = [int(pid.strip()) for pid in self.pid_entry.get().split(',')]
-            configure_logging()
-
-            # 현재 모니터링 중인 프로세스가 있다면 중지
-            if self.current_procs:
-                self.stop_monitoring()
-
-            # 구분선
-            separator_line = "\n----------------------------------------\n"
-            self.log_text.insert(tk.END, separator_line)
-            self.log_text.yview(tk.END)
-
-            # 사용량 출력 시작
-            self.monitoring_active = True
-            self.start_button["text"] = "Pause Monitoring"
-            self.stop_button["state"] = tk.NORMAL
-
-            # 1초마다 정보 출력 타이머 시작
-            self.print_one_second_usage()
-
-        except ValueError:
-            logging.error("Invalid PID(s). Please enter valid integer PIDs separated by commas.")
-
-    def print_one_second_usage(self):
-        # 1초 사용량 출력
-        for pid in self.new_pids:
-            self.monitor_process(pid)
-
-        separator_line = "\n----------------------------------------\n"
-        self.log_text.insert(tk.END, separator_line)
-        self.log_text.yview(tk.END)
-
-        # 다음 1초 동안 정보 불러오기
-        if self.monitoring_active:
-            self.timer_id = self.master.after(1000, self.print_one_second_usage)
-
-    def stop_monitoring(self):
-        # 현재 실행 중인 타이머 중지 후 상태 초기화
-        if self.timer_id is not None:
-            self.master.after_cancel(self.timer_id)
-
-        self.current_procs = []
-        self.previous_memory_usage = {}
-        self.monitoring_active = False
-        self.start_button["text"] = "Start Monitoring"
-        self.stop_button["state"] = tk.DISABLED
-
-    def monitor_process(self, pid):
-        try:
-            # PID에 대한 CPU 및 메모리 사용량 불러오기
-            process = psutil.Process(pid)
-            cpu_percent = round(process.cpu_percent(interval=0.05), 2)
-            current_memory_usage = round(process.memory_info().rss / (1024 ** 2), 2)
-
-            if pid in self.previous_memory_usage:
-                memory_change = round(current_memory_usage - self.previous_memory_usage[pid], 2)
-            else:
-                memory_change = 0.0
-
-            # 사용량 정보
-            log_message = (
-                f"\n-------- 프로세스 리소스 사용 로그 --------\n"
-                f"프로세스 PID: {pid}\n"
-                f"CPU 사용량: {cpu_percent}%\n"
-                f"메모리 사용량: {current_memory_usage} MB\n"
-                f"메모리 변화량: {memory_change} MB\n"
-            )
-
-            self.log_text.insert(tk.END, log_message)
-            self.log_text.yview(tk.END)
-
-            self.previous_memory_usage[pid] = current_memory_usage
-
-        except psutil.NoSuchProcess as e:
-            logging.error(f"PID가 {pid}인 프로세스를 찾을 수 없습니다: {e}")
-        except Exception as e:
-            logging.error(f"오류가 발생했습니다: {e}")
 
 def configure_logging():
     # 로깅 정보 초기화
