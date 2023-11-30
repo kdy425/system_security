@@ -36,6 +36,19 @@ from process_info import get_process_info
 from GUIuses import stop_monitoring, print_one_second_usage, configure_logging, start_monitoring, toggle_monitoring
 #VT_KEY = '1462641f17f8d8412cfd1aa7b00be2d4e30ff73068549ab76463464230a9b74c' 
 ####################################################################################
+
+#프로세스 이름
+'''def get_process_name(pid):
+    process= psutil.Process(pid)
+    process_name = process.name()
+    return process_name'''
+
+#value = self.get_pid()
+#process_name = psutil.Process(value).name()
+
+
+
+
 def get_processes():
     procs = []  #각 프로세스의 정보를 저장 리스트
     for p in psutil.process_iter(): #현재 실행 중인 모든 프로세스를 순회
@@ -625,10 +638,13 @@ class ProcessViewerApp:
         result_text.pack(fill=tk.BOTH, expand=True)
 
     def run_get_process_network_info_result(self):
+        value = self.get_pid()
+        process_name = psutil.Process(value).name()
+
         result = run_get_network_info(self)
         # 실행 결과를 표시할 새 창 생성
         result_window = tk.Toplevel(self.root)
-        result_window.title("network information")
+        result_window.title(process_name + " network information")
         
         # 스크롤 가능한 텍스트 위젯 생성
         result_text = scrolledtext.ScrolledText(result_window, wrap=tk.WORD)
@@ -637,10 +653,13 @@ class ProcessViewerApp:
 
 
     def run_get_process_info_result(self):
+        value = self.get_pid()
+        process_name = psutil.Process(value).name()
+
         result = run_get_process_info(self)
         # 실행 결과를 표시할 새 창 생성
         result_window = tk.Toplevel(self.root)
-        result_window.title("부모 자식 프로세스")
+        result_window.title(process_name + " 부모 자식 프로세스")
         
         # 스크롤 가능한 텍스트 위젯 생성
         result_text = scrolledtext.ScrolledText(result_window, wrap=tk.WORD)
@@ -650,11 +669,14 @@ class ProcessViewerApp:
 
 
     def run_get_process_location_and_display_result(self):
+        value = self.get_pid()
+        process_name = psutil.Process(value).name()
+
         result = run_get_process_location(self)
         
         # 실행 결과를 표시할 새 창 생성
         result_window = tk.Toplevel(self.root)
-        result_window.title("location Result")
+        result_window.title(process_name + " location")
         
         # 스크롤 가능한 텍스트 위젯 생성
         result_text = scrolledtext.ScrolledText(result_window, wrap=tk.WORD)
@@ -663,11 +685,14 @@ class ProcessViewerApp:
 
 
     def run_load_dll_and_display_result(self):
+        value = self.get_pid()
+        process_name = psutil.Process(value).name()
+
         result = run_load_dll(self)
         
         # 실행 결과를 표시할 새 창 생성
         result_window = tk.Toplevel(self.root)
-        result_window.title("dll Result")
+        result_window.title(process_name + " loading dll lists")
         
         # 스크롤 가능한 텍스트 위젯 생성
         result_text = scrolledtext.ScrolledText(result_window, wrap=tk.WORD)
@@ -676,11 +701,14 @@ class ProcessViewerApp:
 
 
     def run_peviewer_and_display_result(self):
+        value = self.get_pid()
+        process_name = psutil.Process(value).name()
+
         result = run_peviewer(self)
         
         # 실행 결과를 표시할 새 창 생성
         result_window = tk.Toplevel(self.root)
-        result_window.title("PEViewer Result")
+        result_window.title(process_name + " PE header")
         
        # 스크롤 가능한 텍스트 위젯 생성
         result_text = scrolledtext.ScrolledText(result_window, wrap=tk.WORD)
@@ -721,12 +749,15 @@ class ProcessViewerApp:
 
     #프로세스의 cpu memory 사용 그래프로 표현
     def show_graph(self):
+        value = self.get_pid()
+        process_name = psutil.Process(value).name()
+
         # 특정 PID 값
         value = self.get_pid()
         graph_pid = int(value)
 
         # 새로운 Figure 객체 생성
-        fig = plt.figure(num='graph', figsize=(10, 8))
+        fig = plt.figure(num= process_name + ' CPU and memory graph', figsize=(10, 8))
 
         # 그래프 초기화
         ax_cpu, ax_memory = fig.subplots(2, 1)
@@ -870,6 +901,8 @@ class ProcessViewerApp:
     def configure_logging():
         # 로깅 정보 초기화
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+
     def print_one_second_usage(app):
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         separator_line = f"\n---------------- {current_time} ----------------\n"
@@ -886,36 +919,42 @@ class ProcessViewerApp:
         # 1초 타이머
         if app["monitoring_active"]:
             app["timer_id"] = app["master"].after(1000, lambda: print_one_second_usage(app))
-    def monitor_process(app, pid):
-        try:
-            # PID에 대한 CPU 및 메모리 사용량
-            process = psutil.Process(pid)
-            cpu_percent = round(process.cpu_percent(interval=0.05), 2)
-            current_memory_usage = round(process.memory_info().rss / (1024 ** 2), 2)
-            if pid in app["previous_memory_usage"]:
-                memory_change = round(current_memory_usage - app["previous_memory_usage"][pid], 2)
-            else:
-                memory_change = 0.0
-            # 사용량 정보
-            log_message = (
-                f"\n-------- 프로세스 리소스 사용 로그 --------\n"
-                f"프로세스 PID: {pid}\n"
-                f"CPU 사용량: {cpu_percent}%\n"
-                f"메모리 사용량: {current_memory_usage} MB\n"
-                f"메모리 변화량: {memory_change} MB\n"
-            )
-            app["log_text"].insert(tk.END, log_message)
-            app["log_text"].yview(tk.END)
-            app["previous_memory_usage"][pid] = current_memory_usage
-        except psutil.NoSuchProcess as e:
-            logging.error(f"PID가 {pid}인 프로세스를 찾을 수 없습니다: {e}")
-        except Exception as e:
-            logging.error(f"오류가 발생했습니다: {e}")
+
+
+        def monitor_process(app, pid):
+            try:
+                # PID에 대한 CPU 및 메모리 사용량
+                process = psutil.Process(pid)
+                cpu_percent = round(process.cpu_percent(interval=0.05), 2)
+                current_memory_usage = round(process.memory_info().rss / (1024 ** 2), 2)
+                if pid in app["previous_memory_usage"]:
+                    memory_change = round(current_memory_usage - app["previous_memory_usage"][pid], 2)
+                else:
+                    memory_change = 0.0
+                # 사용량 정보
+                log_message = (
+                    f"\n-------- 프로세스 리소스 사용 로그 --------\n"
+                    f"프로세스 PID: {pid}\n"
+                    f"CPU 사용량: {cpu_percent}%\n"
+                    f"메모리 사용량: {current_memory_usage} MB\n"
+                    f"메모리 변화량: {memory_change} MB\n"
+                )
+                app["log_text"].insert(tk.END, log_message)
+                app["log_text"].yview(tk.END)
+                app["previous_memory_usage"][pid] = current_memory_usage
+            except psutil.NoSuchProcess as e:
+                logging.error(f"PID가 {pid}인 프로세스를 찾을 수 없습니다: {e}")
+            except Exception as e:
+                logging.error(f"오류가 발생했습니다: {e}")
+
+
     def toggle_monitoring(app):
         if app["monitoring_active"]:
             stop_monitoring(app)
         else:
             start_monitoring(app)
+
+
     def start_monitoring(app):
         try:
             app["new_pids"] = [int(pid.strip()) for pid in app["pid_entry"].get().split(',')]
@@ -930,6 +969,8 @@ class ProcessViewerApp:
             print_one_second_usage(app)
         except ValueError:
             logging.error("Invalid PID(s). Please enter valid integer PIDs separated by commas.")
+
+
     def stop_monitoring(app):
         # 타이머 중지 후 상태 초기화
         if app["timer_id"] is not None:
