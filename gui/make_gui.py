@@ -33,7 +33,6 @@ from network_info import get_network_info
 from process_info import get_process_info
 #from GUIuse import ProcessMonitorApp
 from GUIuses import stop_monitoring, print_one_second_usage, configure_logging, start_monitoring, toggle_monitoring
-#VT_KEY = '1462641f17f8d8412cfd1aa7b00be2d4e30ff73068549ab76463464230a9b74c' 
 ####################################################################################
 
 def get_processes():
